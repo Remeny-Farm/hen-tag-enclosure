@@ -1,0 +1,11 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# OS
+.DS_Store
+
+# cad/out/ has its own .gitignore controlling which generated STL/STEP/3MF
+# files are tracked vs. ignored — see cad/out/.gitignore.
