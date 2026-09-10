@@ -68,7 +68,7 @@ cd cad
 # Build the enclosure and export STEP + STL to out/
 uv run --python 3.12 hen_tag_enclosure.py
 
-# 29 machine checks (interference, fit, wall thickness, seal, harness) + half sections
+# 38 machine checks (interference, fit, bayonet, wall thickness, seal, harness) + half sections
 uv run --python 3.12 verify.py
 
 # Generate one hen's cap: id, optional message, icon
@@ -76,6 +76,12 @@ uv run --python 3.12 cap_marking.py 67 --top "Bözsi!" --icon heart
 
 # Generator test suite (add --bambu for the full Bambu Studio export path)
 uv run --python 3.12 test_cap_marking.py
+
+# Real-slicer check: warnings + travels over open air (needs Bambu Studio)
+uv run --python 3.12 slice_check.py
+
+# Bambu Studio project with all four parts and the print settings baked in
+uv run --python 3.12 slice_check.py --project   # -> out/hen_tag_revC_P1S.3mf
 ```
 
 First run downloads the OCCT wheel (~60 MB) and a CPython 3.12 toolchain;
@@ -90,11 +96,17 @@ real slicer.
 |---|---|---|
 | Material | Transparent PETG | Impact resistance, UV stability, low moisture absorption; keeps the LED and lettering readable. |
 | Nozzle | 0.40 mm | Thinnest wall in the design is 0.80 mm = 2 perimeters. |
-| Layer height | 0.16 mm | The thread flanks and the O-ring groove need the resolution. |
-| Perimeters | 3 | |
+| Layer height | 0.16 mm | The bayonet ramps and the O-ring groove need the resolution. |
+| Perimeters | 3 | The bayonet lips make the skirt 5 lines thick in places. |
+| Wall generator | **Arachne** | Variable-width walls absorb the lips as walls, not infill islands. |
+| Avoid crossing walls | **On** | Routes travels over the print, not across the open bore; without it PETG strings the bore (58 → 3 crossing travels on the cap coupon). |
 | Infill | 30 %+ | Parts are nearly all perimeter anyway. |
 | Supports | None | Verified by slicing — all four parts return `Success.` with zero warnings. |
 | Orientation | Already baked into the exported STLs | Drop them on the plate as-is; re-orienting the cap turns its top plate into a ~28 mm bridge. |
+
+Or skip the settings altogether: [`cad/out/hen_tag_revC_P1S.3mf`](cad/out/hen_tag_revC_P1S.3mf)
+is a Bambu Studio project with the four printables on one P1S plate and every
+setting above already applied — open, slice, print.
 
 Full rationale, tolerances and the slicer verification log are in
 [`DESIGN.md`](DESIGN.md#print-settings).
@@ -104,9 +116,10 @@ Full rationale, tolerances and the slicer verification log are in
 - **Radial seal, not an axial face seal** — the O-ring seals on a bore
   diameter instead of a compressed flange, which also removes ~1.7 g of pure
   overhead. [`DESIGN.md`](DESIGN.md#1-radial-seal-not-the-axial-face-seal)
-- **Thread below the seal** — the only assembly order the cap can actually be
-  screwed on in, and it keeps the O-ring from ever crossing the thread.
-  [`DESIGN.md`](DESIGN.md#2-thread-low-seal-high)
+- **Bayonet closure below the seal** — three lugs and self-locking helical
+  ramps replace a thread whose ridges were thinner than one extrusion; every
+  face on both parts prints without support, and the O-ring never crosses the
+  lugs. [`DESIGN.md`](DESIGN.md#9-bayonet-not-a-thread)
 - **Three-colour coin cap** — a deterministic per-hen cap with coin-style
   bent lettering, an accent-ring icon, and a clear shell so the LED needs no
   aligned window. [`DESIGN.md`](DESIGN.md#8-customer-cap-clear-shell-big-coin-lettering-accent-core)
@@ -119,18 +132,21 @@ Full rationale, tolerances and the slicer verification log are in
 
 ## Status
 
-**v1 is Revision B geometry.** It is machine-verified — 29 checks in
-`cad/verify.py`, all passing, and all four parts slice clean in Bambu Studio
-with zero warnings — but that is a claim about the model, not about a worn
-device:
+**v1 is Revision C geometry.** It is machine-verified — 38 checks in
+`cad/verify.py`, all passing — but that is a claim about the model, not about
+a worn device:
 
-- **Revision A** was printed and fitted on a Bambu Lab P1S: dimensions and
-  thread both confirmed good on physical parts. The thread clearances are
-  therefore empirical for this printer, not assumed.
+- **Revision A** was printed and fitted on a Bambu Lab P1S: dimensions good,
+  and its thread mated on that one pair. Later caps tore along the thread,
+  whose ridges compute to less than one extrusion wide, so revision C
+  replaced it with a bayonet.
 - **Revision B's body** has also been printed and accepted the board in its
-  intended orientation. Its **cap, the complete sealed assembly, and the
-  harness tabs under load remain untested** — no O-ring has been compressed,
-  no water has touched it, and no elastic has loaded a tab.
+  intended orientation, and revision B sliced clean in Bambu Studio.
+- **Revision C's bayonet** slices clean and its coupon pair has been printed
+  once: dimensions good, lock-up angle not yet reported. The full cap, the
+  complete sealed assembly and the harness tabs under load remain untested —
+  no O-ring has been compressed, no water has touched it, and no elastic has
+  loaded a tab.
 - **No hen has worn this device.**
 
 See [`DESIGN.md`](DESIGN.md#verified-evidence-vs-working-hypotheses) for the

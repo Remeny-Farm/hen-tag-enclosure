@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.11,<3.13"
-# dependencies = ["build123d", "bd_warehouse"]
+# dependencies = ["build123d"]
 # ///
 """Test suite for the deterministic tag generator.
 

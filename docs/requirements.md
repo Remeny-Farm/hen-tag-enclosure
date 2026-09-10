@@ -2,10 +2,12 @@
 
 ## Purpose & Status
 This document specifies the mechanical design criteria, material selection, sealing mechanisms, and PCB coating procedures for the active hen tag enclosure.
-- **Status**: Revision B. Parametric CAD generated, machine-verified, and
-  slicer-checked. **Revision A was printed and fitted on a Bambu Lab P1S —
-  dimensions and thread confirmed good. A revision B body was also printed and
-  accepted the board; its cap and complete sealed assembly remain untested.**
+- **Status**: Revision C (bayonet closure). Parametric CAD generated and
+  machine-verified. **Revision A was printed and fitted on a Bambu Lab P1S —
+  dimensions good; its thread mated on that pair, but later caps tore along it,
+  so revision C replaced the thread with a bayonet (UNVERIFIED, no coupon
+  printed). A revision B body was also printed and accepted the board; the cap
+  and complete sealed assembly remain untested.**
 - **Source of truth for geometry**: [`DESIGN.md`](../DESIGN.md) and `../cad/hen_tag_enclosure.py`. Where this document and `DESIGN.md` disagree on the sealing arrangement, `DESIGN.md` is current — see "Sealing" below.
 - Board dimensions remain operator caliper readings with one unresolved ambiguity: [`docs/lab/2026-08-28-enclosure-board-measurements.md`](lab/2026-08-28-enclosure-board-measurements.md).
 
@@ -15,7 +17,7 @@ This document specifies the mechanical design criteria, material selection, seal
 
 ```
 +-----------------------------------------------------------------------------+
-| TWO-PART SCREW-CAP ENCLOSURE, REV B      Assembled: 40.14 x 31.94 x 8.70 mm |
+| TWO-PART BAYONET-CAP ENCLOSURE, REV C    Assembled: 40.14 x 31.94 x 8.70 mm |
 +-----------------------------------------------------------------------------+
 |                            O31.94                                           |
 |              +------------------------------+   Transparent PETG cap        |
@@ -26,7 +28,7 @@ This document specifies the mechanical design criteria, material selection, seal
 |         O----+ ####################### z=4.0+----O   away from the bird     |
 |              |***+--------------------+*****|   O-ring ID 26.74 x CS 1.5    |
 |              |***|  CR2032 + holder   |*****|   radial, seals on r=13.70    |
-|    ##########+***|  O21, offset 2.0   |*****+##########  thread Tr28.6x1.0  |
+|    ##########+***|  O21, offset 2.0   |*****+##########  bayonet, lugs low  |
 |    +-----+   |___+--------------------+_____|   +-----+  BELOW the seal     |
 |    |  o  |===|   *** = fill that holds the holder |  o  |===  in-plane tabs |
 |    +-----+   +------------------------------+   +-----+   slot 8.8 x 1.8    |
@@ -57,8 +59,13 @@ This document specifies the mechanical design criteria, material selection, seal
   compressed against a plain band on the body. Compression is set by the bore
   diameter, so it does not depend on how hard the cap is tightened — which is
   what the superseded design needed a stop flange to control.
-- **Closure**: Trapezoidal screw thread Tr28.6 × 1.0, positioned **below** the
-  seal so the O-ring never crosses the thread.
+- **Closure**: Three-lug bayonet — 0.80 mm lugs on the body, self-locking
+  helical ramps in the cap, 30° clockwise to lock — positioned **below** the
+  seal so the O-ring never crosses the lugs. Replaced the Tr28.6 × 1.0 thread
+  on 2026-09-10 after caps tore along it; see
+  [`DESIGN.md`](../DESIGN.md#9-bayonet-not-a-thread) decision 9 and
+  [`docs/lab/2026-09-10-thread-print-failure.md`](lab/2026-09-10-thread-print-failure.md).
+  UNVERIFIED in print.
 - **Target Ingress Rating**: Realistic IP54-level dust and splash protection.
   No certified ingress rating is claimed, and none has been tested.
 
@@ -90,7 +97,7 @@ To protect bare board traces from moisture condensation and corrosive ammonia va
 ### Verified Evidence
 - Holyiot 25008 board with CR2032 battery holder physically observed on test bench.
 - PCB and holder are **internally tangent**: the cell edge is flush with the PCB edge at one point. Confirmed geometrically from the reported Ø25 and Ø21 diameters (2.00 mm centre offset, 0.0000 mm edge gap).
-- **Revision A printed on a Bambu Lab P1S — dimensions good, thread good.** Thread clearances are empirical for that printer. See [`docs/lab/2026-08-28-enclosure-print-trial.md`](lab/2026-08-28-enclosure-print-trial.md).
+- **Revision A printed on a Bambu Lab P1S — dimensions good; its thread mated on that pair.** The thread has since been replaced by the revision C bayonet after later caps tore along it (`docs/lab/2026-09-10-thread-print-failure.md`). See [`docs/lab/2026-08-28-enclosure-print-trial.md`](lab/2026-08-28-enclosure-print-trial.md).
 - Revision B geometry is watertight and assembles without interference — 29
   machine checks in `../cad/verify.py`, all passing, and all four parts slice clean
   in Bambu Studio. Its printed body accepted the board in the intended
@@ -98,8 +105,8 @@ To protect bare board traces from moisture condensation and corrosive ammonia va
   remain physically untested.
 
 ### Key Decisions
-- Two-part transparent PETG screw cap with a **radial** NBR O-ring (ID 26.74 × CS 1.50 mm). The 30 × 2 mm face-seal ring is superseded.
-- Thread positioned below the seal, so the cap can actually be assembled and the O-ring never crosses the thread.
+- Two-part transparent PETG bayonet cap with a **radial** NBR O-ring (ID 26.74 × CS 1.50 mm). The 30 × 2 mm face-seal ring is superseded.
+- Closure positioned below the seal, so the cap can actually be assembled and the O-ring never crosses it. Revision C's closure is a bayonet; the thread it replaced tore in print.
 - **Holder faces down toward the harness, PCB faces up.** The LED is on the PCB and must be readable through the cap rather than pointed at the bird.
 - **Fill around the cell** so the body itself retains the holder: 100 % of the holder circumference is backed by fill or by the cavity wall.
 - Board clamped by a foam **ring** (OD 25 × ID 16 × 1.0 mm) on the PCB rim, leaving a Ø16 LED window. Ring, not disc, so the LED stays visible.
@@ -108,7 +115,7 @@ To protect bare board traces from moisture condensation and corrosive ammonia va
 - No antenna keep-out designed. The antenna could not be located, and inventing a zone would breach the no-invented-hardware rule.
 
 ### Open Questions & Next Steps
-1. **Print and test the revision B cap and complete assembly.** The body/board
+1. **Print the revision C bayonet coupons, then the cap and complete assembly.** The body/board
    fit is observed, but the model cannot prove cap fit, LED visibility through
    the current clear-shell/inlay design, sealing, or that a tab survives an
    elastic under load.

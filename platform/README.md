@@ -5,7 +5,7 @@
 Design for making the existing Rev B tag the mounting platform for a family of
 accessories (decorative add-ons, villa builds, saddle integration) **without
 changing anything the current tag already does**: LED ring window, coin
-lettering, radial seal, screw cap, flat underside, harness tabs, mass budget.
+lettering, radial seal, bayonet cap, flat underside, harness tabs, mass budget.
 
 - **Status: PROPOSAL. Nothing here has been printed or tested.**
 - These files are deliberately separate. `../DESIGN.md` and
@@ -30,10 +30,10 @@ A two-piece **keeper collar** clips around the cap skirt. It is keyed by the two
 harness tabs (so it cannot rotate), rests on the tab shoulders, and hooks over
 the cap rim with a lip that stops **outside** the lettering band — every printed
 feature of the cap face stays visible. Clamping the skirt (plus ribs matching
-the existing grip scallops) locks the cap against unscrewing. The collar's crown
+the existing grip scallops) locks the cap against turning open. The collar's crown
 carries a **quarter-turn bayonet** ring: accessories twist on and off with a
 motion a beak cannot reproduce, and any torque they receive is routed
-collar → tabs → body, never into the cap thread. With no accessory mounted the
+collar → tabs → body, never into the cap closure. With no accessory mounted the
 tag looks almost exactly as it does today, plus a slim ring around the skirt.
 
 ## What must change on the current tag
@@ -49,14 +49,14 @@ personalised caps.
 a lateral retention groove on the base-flange OD (z −0.55…0.00, 0.5 deep,
 root r 15.47). The collar's bottom bead enters it sideways as the clamshell
 closes: positive up/down lock with zero flexing, and every accessory load
-routes collar → body → harness, **bypassing the cap thread entirely** — which
-also dissolves the original cap-unscrewing concern. The body is the generic
+routes collar → body → harness, **bypassing the cap closure entirely** — which
+also dissolves the original cap-opening concern. The body is the generic
 part: existing tags swap to a grooved body at a normal battery service and
 the personal cap carries over unchanged; until then the collar fits existing
 bodies in friction-only mode (bench work yes, deployment no).
 
 Machine-verified on 2026-08-30: the variant removes 30.1 mm³, adds 0.0 mm³ —
-thread, seal band, cavity, tabs, flat underside untouched; the collar coupon
+closure, seal band, cavity, tabs, flat underside untouched; the collar coupon
 shows 0.000 mm³ interference against both the grooved body and the cap, and
 its lowest point stays 0.40 mm above the floor plane (it never touches the
 hen). Optional Rev C nicety: 0.3 mm pad-seat recesses on the tab shoulder
@@ -65,7 +65,7 @@ ledges.
 ## Frozen interface (contract for every future revision)
 
 Any revision that keeps these values stays collar-compatible. Values from
-`hen_tag_enclosure.py` (Rev B):
+`hen_tag_enclosure.py` (Rev B, unchanged by the Rev C bayonet closure):
 
 | Parameter | Value | Why frozen |
 |---|---|---|

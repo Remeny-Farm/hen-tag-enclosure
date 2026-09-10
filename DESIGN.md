@@ -5,12 +5,16 @@
 Parametric two-part enclosure for the Holyiot 25008 tag, generated from code in
 `cad/hen_tag_enclosure.py`.
 
-- **Status**: Revision B. Geometry generated, machine-verified, exported.
-  **Revision B has not been printed.**
-- **Revision A was printed and fitted** on a Bambu Lab P1S — dimensions and
-  thread both confirmed good. See
-  `docs/lab/2026-08-28-enclosure-print-trial.md`. The thread clearances are
-  therefore empirical; the board dimensions still are not.
+- **Status**: Revision C. Geometry generated, machine-verified, exported.
+  **Revision C's coupon pair has been printed once (dimensions good); the
+  lock-up angle is unreported and the full cap unprinted.**
+- **Revision A was printed and fitted** on a Bambu Lab P1S — dimensions good,
+  and its thread mated on that one pair. See
+  `docs/lab/2026-08-28-enclosure-print-trial.md`. Later caps tore along the
+  thread, whose ridges compute to less than one extrusion wide; the thread
+  was replaced by a bayonet on 2026-09-10. See
+  `docs/lab/2026-09-10-thread-print-failure.md` and decision 9. The board
+  dimensions still are not empirical.
 - **Blocking caveat**: the board dimensions this design is built on are operator
   caliper readings that carry an unresolved ambiguity. See
   `docs/lab/2026-08-28-enclosure-board-measurements.md`.
@@ -22,11 +26,11 @@ Parametric two-part enclosure for the Holyiot 25008 tag, generated from code in
 | | |
 |---|---|
 | Assembled envelope | **40.14 × 31.94 × 8.70 mm** (Ø31.94 body, tabs to 40.14) |
-| Printed mass (PETG) | **5.05 g** (body 2.78 + cap 2.27) |
-| Assembled mass | **10.92 g** — 0.92 g over the 10 g target |
+| Printed mass (PETG) | **5.07 g** (body 2.71 + cap 2.36) |
+| Assembled mass | **10.94 g** — 0.94 g over the 10 g target |
 | Orientation | Holder **down** toward the harness, PCB **up**, LED outward |
 | Sealing | Radial NBR O-ring, **ID 26.74 × CS 1.50 mm** |
-| Closure | Trapezoidal screw thread, Tr28.6 × 1.0, 30°, 2.8 mm engaged |
+| Closure | Bayonet: 3 lugs × 20°, 0.80 mm proud, 30° clockwise onto self-locking helical ramps |
 | Material | Transparent PETG. Conductive/CF filament remains prohibited. |
 
 ```
@@ -39,7 +43,7 @@ Parametric two-part enclosure for the Holyiot 25008 tag, generated from code in
          ○────┤ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ z=4.0 ├────○  O-ring, z=3.71…5.74
               │███┌──────────────────┐███████│   seals on band r=13.70
               │███│ CR2032 + holder  │███████│   ███ = fill, holds the holder
-    ▓▓▓▓▓▓▓▓▓▓╪███│ Ø21, offset 2.0  │███████╪▓▓▓▓▓▓▓▓  thread z=0.20…3.00
+    ▓▓▓▓▓▓▓▓▓▓╪███│ Ø21, offset 2.0  │███████╪▓▓▓▓▓▓▓▓  3 lugs z=1.80…2.80
     ┌─────┐   │▁▁▁└──────────────────┘▁▁▁▁▁▁▁│   ┌─────┐  floor 1.00
     │  ▄  │═══╡        cell rests on the floor  ╞═══│  ▄  │  ← in-plane tabs
     └─────┘   └──────────────────────────────┘   └─────┘     slot 8.8 x 1.8
@@ -73,15 +77,18 @@ diameter, not by how hard the cap is tightened. The face seal needed a stop
 flange precisely to stop the operator from shearing the ring — a failure mode the
 radial arrangement does not have.
 
-### 2. Thread low, seal high
+### 2. Closure low, seal high
 
 The first layout put the seal below the thread and **could not be assembled**.
-The cap's internal thread crests sit at r 14.00; sliding them down past a sealing
-band at r 14.30 is a collision. Caught by `verify.py`, not by eye.
+The cap's internal thread crests sat at r 14.00; sliding them down past a
+sealing band at r 14.30 is a collision. Caught by `verify.py`, not by eye.
 
 Inverting it fixes the assembly path and adds a second benefit: **the O-ring
-never travels across the thread**, which would shred it. The check that enforces
-this is `cap thread clears the seal band` in `verify.py`.
+never travels across the closure**, which would shred it. The rule survived
+the change from thread to bayonet (decision 9) unchanged: the lugs sit at
+z 1.80–2.80, the groove starts at z 3.76, and the checks that enforce it are
+`cap bore clears the seal band` and `O-ring never crosses the lugs` in
+`verify.py`.
 
 ### 3. Holder down, PCB up
 
@@ -149,7 +156,7 @@ three filaments, delivered as a pre-registered Bambu project
 
 | Body | Filament | What it is |
 |---|---|---|
-| `cap_<n>` | **clear PETG** | the whole shell — thread, seal, envelope untouched |
+| `cap_<n>` | **clear PETG** | the whole shell — closure, seal, envelope untouched |
 | `marking_<n>` | text colour | number (bottom arc, 6.0 pt), message (top arc, 5.2 pt caps), icon — 0.64 mm flush inlays |
 | `core_<n>` | accent colour | full disc Ø17.2, the icon cut from it — colours meet edge to edge |
 
@@ -164,7 +171,7 @@ grows to ~6 mm — letters twice the printed height, messages capped at
 29-case suite: envelope, rejections, determinism, full Bambu export.
 
 ---|---|---|
-| `cap_<n>` | customer's cap colour, opaque | the shell — thread, seal, envelope untouched |
+| `cap_<n>` | customer's cap colour, opaque | the shell — closure, seal, envelope untouched |
 | `marking_<n>` | customer's text colour | coin-style lettering + centre heart, a 0.64 mm flush inlay |
 | `window_<n>` | clear PETG | a **3.0 mm wide clear ring at r 10.0**, through the whole top plate |
 
@@ -176,7 +183,8 @@ the cavity (0.46 mm of shell above it); the window does, which is the point.
 **Why a ring.** The LED centre is 2.5 mm in from the board edge (operator
 caliper), i.e. r = 10.0. Its *angle* relative to the cap is not controlled —
 the board can turn a few degrees in its pocket, and the cap's stop angle
-carries print tolerance at 360° per millimetre of pitch — so a local window
+carried print tolerance at 360° per millimetre of thread pitch (the bayonet
+ramp brings that down to about 4° per 0.05 mm, decision 9) — so a local window
 would need bench-proven angular registration. A ring at the LED radius lights
 wherever the LED is and needs no alignment at all. Its width only has to
 cover the radial tolerance chain, which is small and known:
@@ -216,6 +224,54 @@ is inside the ID.
 
 `--no-window` reproduces the earlier two-body transparent cap.
 
+### 9. Bayonet, not a thread
+
+Revisions A/B closed with a Tr28.6 × 1.0 trapezoidal thread. One pair printed
+and mated on 2026-08-28; the caps printed since tore along the thread and the
+operator reported the flanks as "too steep". Computed from the revision B
+`Params`, the thread was never inside what a 0.4 mm nozzle can lay down:
+
+| Feature | Rev B thread | Why it tears |
+|---|---|---|
+| flank angle from horizontal | 15° | a 75° overhang; each ridge is a 0.55 mm shelf ~3 layers tall |
+| male crest width | 0.35 mm | below one 0.40 mm extrusion |
+| cap (female) crest width | **0.05 mm** | (1.0 − 0.647) − 2 × 0.15: a knife edge, hanging downward once the cap is flipped for printing |
+| cap ridge root width | 0.35 mm | the whole ridge is thinner than one extrusion at its base |
+
+The replacement is a three-lug bayonet, sized so that on **both** parts, in
+their print orientations, the only flat overhang is one extrusion width:
+
+| | Body | Cap |
+|---|---|---|
+| Feature | 3 lugs on the seal band, 20° × 0.80 mm proud, z 1.80–2.80 | 3 L-channels: 28° entry slot at the skirt's open end, then a 51° leg under a ceiling at z 3.10 |
+| Bearing face | underside: 0.50 mm flat next to the band, then a 50° chamfer to the crest | lip top: 0.50 mm flat at the bore, then a 50° chamfer to the channel root |
+| Overhang when printed | the 0.50 mm flat (body prints upright) | the 0.50 mm flat (cap prints top-plate-down, the lips hang from the skirt) |
+| Load path | lug sheared at its root, 3 × 4.8 × 0.8 mm | lip in bending, 1.4–2.0 mm thick; 5.8 mm² flat-on-flat contact |
+
+Both bearing faces are **helical at the same pitch** (12 µm per degree of cap
+rotation, 2.7° helix angle), so they meet face to face rather than edge on
+face. Turning the cap clockwise runs the lugs up the lips; after 30° the
+flats meet and every further degree wedges the cap 12 µm harder onto the
+base flange — the same hand-tight-to-the-stop feel the thread gave, and
+self-locking (2.7° is far below PETG's ~11° friction angle). The ramp keeps
+rising to 55° of travel, so a part that prints 0.36 mm tight or 0.30 mm loose
+still locks, just at a different angle. Angular repeatability of the locked
+cap improves from 18° per 0.05 mm of stop-face error (1.0 mm pitch) to about
+4° per 0.05 mm.
+
+What did not change: the radial seal and its groove, the cap OD (31.94 mm),
+the grip scallops, the tabs, the lettering and LED ring, and the assembly
+rule of decision 2. `cap_marking.py` and the accessory-platform proposal
+inherit the new skirt untouched. The thread code is gone from the source
+(and with it the `bd_warehouse` dependency); commit `e3cf940` has it.
+
+**UNVERIFIED in fit.** The coupon pair has been printed once — dimensions
+good, lock-up angle not yet reported (lab note 2026-09-10, print trial 1).
+The coupon pair (`coupon_body`, `coupon_cap`) carries the lugs, the channels and the
+groove at the real parts' z stations; the print trial's two questions are
+whether the cap drops on at the entry slots and at what angle it locks up.
+That angle re-tunes `cam_lock`.
+
 ---
 
 ## Bill of Materials — non-printed
@@ -239,11 +295,16 @@ is inside the ID.
 |---|---|---|
 | Material | Transparent PETG | UV/impact per README; LEDs stay readable |
 | Nozzle | 0.40 mm | thinnest wall in the design is 0.80 mm = 2 perimeters |
-| Layer | 0.16 mm | thread flanks and the O-ring groove need the resolution |
-| Perimeters | 3 | |
+| Layer | 0.16 mm | the lip ramps and the O-ring groove need the resolution |
+| Perimeters | 3 | the bayonet lips make the skirt 5 lines thick in places; 3 walls + gap fill |
+| Wall generator | **Arachne** | variable-width walls absorb the lips as walls, not as infill islands |
+| Avoid crossing walls | **on** | routes travels over the print instead of across the open bore — see *Stringing* below |
 | Infill | 30 %+ | parts are nearly all perimeter anyway |
 | Supports | **none** | verified by slicing; see below |
 | Orientation | **already baked into the STLs** | drop them on the plate as-is |
+
+`cad/out/hen_tag_revC_P1S.3mf` (from `slice_check.py --project`) carries all
+four printables and these settings as a Bambu Studio project.
 
 The exported STLs lie in their print orientation: the body floor-down, the cap
 and the female coupon flipped top-plate-down. Do not re-orient them. Left as
@@ -251,13 +312,36 @@ modelled, the cap lands opening-down and its top plate becomes a ~28 mm bridge
 over the cavity. The STEP files keep the design coordinate system, so the model
 stays readable in CAD.
 
-Sliced with Bambu Studio 02.08.02.60 at default settings, all four parts return
-`Success.` with **zero warnings** and `max_cantilever_dist = 0` for the body.
+Revision B was sliced with Bambu Studio 02.08.02.60 at default settings: all
+four parts returned `Success.` with **zero warnings** and
+`max_cantilever_dist = 0` for the body. Revision C slices clean in the same
+version, no warnings on any part; `cad/slice_check.py` repeats that check
+from the command line and also reads the G-code back for the item below.
 
-The coupons (`coupon_body.stl`, `coupon_cap.stl`, ~1.1 g each) carry the thread
-pair and the groove and nothing else. **On a Bambu Lab P1S the thread fit is
-already confirmed**, so they are only needed when moving to a different printer
-or material. If a coupon binds there, change `fit_thread_r` in the source and
+**Stringing is a toolpath property, not a geometry one.** In every layer of
+the lip zone the skirt is a thin wall carrying three thicker arcs separated
+by the entry slots, so the slicer prints three islands per layer and travels
+between them. Left to the stock profile it flies straight across the open
+bore and PETG leaves a hair on every pass; the first printed coupon showed
+exactly that (lab note 2026-09-10, print trial 1). Measured on the G-code —
+travels longer than 3 mm passing within 12 mm of the axis over open air:
+
+| Part | stock Bambu profile | 3 walls + Arachne + avoid crossing walls |
+|---|---|---|
+| `coupon_cap` | 58 | **3** |
+| `cap` | 107 | **19** (layer changes) |
+| `coupon_body` | 96 | **0** |
+| `body`, across the cell pocket | 102 | 68 |
+
+The revision B threaded cap measured 106 on the stock profile, so this is
+not a cost of the bayonet; it was always there, hidden inside a closed cap.
+
+The coupons (`coupon_body.stl` 1.70 g, `coupon_cap.stl` 1.22 g) carry the
+bayonet pair and the groove and nothing else, at the real parts' z stations.
+**The bayonet fit has not been printed anywhere yet**, so print the pair
+first. If the cap locks up well before 30° the parts are tight; if it reaches
+the end wall still loose they are slack — either way report the angle and
+change `cam_lock` (or `fit_lug_r` if the lugs bind radially) in the source and
 regenerate; do not file the parts.
 
 ---
@@ -275,33 +359,45 @@ regenerate; do not file the parts.
 4. Stick the OD 25 × ID 16 × 1.0 mm foam ring into the cap's annular ceiling
    recess, leaving the centre window open.
 5. Fit the O-ring into the cap's internal groove.
-6. Thread the cap on hand-tight until the skirt meets the base flange. Do not
-   overtighten — the radial seal does not need it.
+6. Turn the cap about 30° anticlockwise from its final position so the entry
+   slots sit over the three lugs, press it straight down over the seal band
+   until the skirt meets the base flange, then turn it clockwise until it
+   stops turning freely — about 30°. Hand-tight is enough; the ramp is
+   self-locking and the radial seal does not need more.
 7. Thread the elastic through each side tab's slot and back around the bar.
 
 ---
 
 ## Verification Performed
 
-`cad/verify.py`, 29 machine checks, all passing. Notable ones:
+`cad/verify.py`, 38 machine checks, all passing. Notable ones:
 
 - body/cap collision: **0.000 mm³** at the assembled position
 - board vs. enclosure interference: **0.0000 mm³**
 - holder circumference backed by plastic: **100 %**
 - fill clears the PCB face: 0.20 mm
 - clearance at the tangent point: **0.30 mm**
-- cap thread clears the seal band: **+0.30 mm** (the check that caught decision 2)
-- O-ring never crosses the thread: groove starts z 3.71, thread ends z 3.00
+- cap drops on at the entry angle and the lugs run free for 0–28°: **0.000 mm³**
+  overlap at every step
+- ramp wedges past the lock angle: **0.296 mm³** interference at +4°, the cap tightens
+- locked cap retained: **5.77 mm³** lug/lip overlap when lifted 0.6 mm; at the
+  entry angle it lifts off clean
+- cap bore clears the seal band: +0.10 mm (the rule that caught decision 2)
+- O-ring never crosses the lugs: groove starts z 3.76, channels end z 3.10
 - O-ring squeeze: **22 %** (static radial target is 15–30 %)
 - thinnest wall: **0.80 mm** under the grip scallops
 - 8.0 mm elastic threads the tab slot: **0.000 mm³** obstructing
 - tab bar cross-section: **4.80 mm²**
 - underside flat: **0.000 mm³** below the floor plane
 - assembled envelope: 40.14 × 31.94 × 8.70 mm
-- worst unsupported overhang band: **9.36 mm²** on the body, 96.33 mm² on the
-  cap (the O-ring groove flank, which becomes a ceiling once the cap is flipped)
+- worst unsupported overhang band: **3.03 mm²** on the body (the lugs' bearing
+  flats), 96.33 mm² on the cap (the O-ring groove flank, which becomes a
+  ceiling once the cap is flipped; unchanged since revision A). The cap's total
+  fell from 242 to 115 mm² with the thread gone.
 - meshes watertight: 0 non-manifold edges, 0 loose vertices, positive volume
-- **sliced clean in Bambu Studio**: all four parts `Success.`, zero warnings
+- **sliced clean in Bambu Studio** (revision C, 2026-09-10): all four parts,
+  zero warnings; open-air travels with the recommended settings: cap 19,
+  coupon 3, body 0 above the fill (`cad/slice_check.py`)
 
 ### The floating-cantilever defect
 
@@ -320,7 +416,8 @@ Confirmed by slicing both versions:
 A second, smaller floating feature was found in the same pass: the thread began
 0.2 mm above the base flange, leaving its first ridge unsupported. The thread now
 starts flush on the flange, which took the body's worst overhang band from
-18.95 mm² down to 9.36 mm².
+18.95 mm² down to 9.36 mm² (revision B; with the thread replaced by the bayonet in
+revision C it is 3.03 mm²).
 
 `verify.py` now measures unsupported overhang area per part against limits
 calibrated to revision A, which is known to print, so this class of defect
@@ -332,8 +429,9 @@ not distorting the geometry.
 **What revision A proved**: printed on a Bambu Lab P1S, dimensions and thread
 fit both confirmed good on physical parts.
 
-**What none of this proves**: revision B — the inverted stack, the cell fill and
-the side tabs — has not been printed. No O-ring has been compressed, no water
+**What none of this proves**: the bayonet's fit. The coupon pair has been
+printed once (dimensions good, lock-up angle not yet reported); the full cap
+has not been printed. No O-ring has been compressed, no water
 has touched it, no elastic has loaded a tab, and no hen has worn it.
 
 ---
@@ -342,9 +440,10 @@ has touched it, no elastic has loaded a tab, and no hen has worn it.
 
 ### Verified
 
-- **Revision A printed and fitted on a Bambu Lab P1S: dimensions good, thread
-  good.** The thread clearances (`fit_thread_r` 0.25, `fit_thread_a` 0.15) and
-  the trapezoidal profile are therefore empirical for this printer, not assumed.
+- **Revision A printed and fitted on a Bambu Lab P1S: dimensions good; the
+  thread mated on that one pair.** Later caps tore along it (lab note
+  2026-09-10), so the thread and its clearances are history. What carries over
+  as empirical is the cavity, the seal band and the skirt.
 - The geometry is internally consistent, manifold, and assembles without
   interference **given the assumed inputs**.
 - The internal tangency of PCB and holder follows from the two reported
@@ -359,6 +458,8 @@ has touched it, no elastic has loaded a tab, and no hen has worn it.
 - Holder mass 0.6 g and O-ring mass 0.4 g, both estimates that the 10 g budget
   argument depends on.
 - Elastic cross-section fitting an 8.6 × 2.0 mm channel.
+- The bayonet fit: `fit_lug_r` 0.15, `fit_lug_z` 0.30, lock-up at 30°. Modelled,
+  no coupon printed.
 
 ### Unknown
 
@@ -368,10 +469,11 @@ has touched it, no elastic has loaded a tab, and no hen has worn it.
 
 ## Open Questions & Next Steps
 
-1. **Print revision B** and check three things the model cannot: that the board
-   drops in holder-first without fouling the fill, that the LED is actually
+1. **Print the bayonet coupon pair** and report whether the cap drops on at
+   the entry slots and at what angle it locks up (nominal 30°, usable 5–55°);
+   that angle re-tunes `cam_lock`. Then the full cap: that the LED is actually
    visible through the Ø16 foam window, and that a tab survives being loaded
-   with an elastic.
+   with an elastic. The revision B body has already accepted the board.
 2. **Measure the total stack height** in one caliper span and the assembly mass
    on a scale. Both feed straight back into `Params`.
 3. **Source the O-ring** at ID 26.74 × CS 1.50 mm, or report the nearest stock

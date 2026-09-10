@@ -1,7 +1,7 @@
 # Keeper Collar — Design (PROPOSAL, not printed)
 
 The one new load-bearing part. A two-piece PETG ring that clips around the
-assembled tag, locks the cap against unscrewing, and carries the quarter-turn
+assembled tag, locks the cap against turning open, and carries the quarter-turn
 bayonet every accessory mounts on. Fits the unmodified Rev B tag.
 
 ## Cross-section (at a tab azimuth → window; elsewhere the wall is closed)
@@ -26,7 +26,7 @@ bayonet every accessory mounts on. Fits the unmodified Rev B tag.
         FLAT UNDERSIDE — collar never goes below it, never touches the hen
 ```
 
-## How it holds — four constraints, none touching the thread
+## How it holds — four constraints, none touching the closure
 
 | Constraint | Feature | Load path |
 |---|---|---|
@@ -43,8 +43,8 @@ The groove therefore lives on the **body flange** (z −0.55…0.00, root
 r 15.47), and the collar wall now reaches down to z −0.60 — still 0.40 mm
 above the floor plane, so the collar never touches the hen. The bead enters
 the groove **laterally** as the clamshell closes: no snap-over, no flexing,
-zero-fatigue positive lock, and all accessory loads bypass the cap thread
-entirely — the original unscrewing concern dissolves. Machine-verified in
+zero-fatigue positive lock, and all accessory loads bypass the cap closure
+entirely — the original cap-opening concern dissolves. Machine-verified in
 `../cad/hen_tag_platform.py`: body variant removes 30.1 mm³ / adds 0.0 mm³;
 collar interference 0.000 mm³ vs. grooved body and vs. cap; lowest collar
 point +0.40 mm above the floor plane. Existing (ungrooved) bodies take the
@@ -56,7 +56,7 @@ so id, message and heart remain fully visible. The clear LED ring (r 8.5–11.5)
 is nowhere near the collar.
 
 Service order is forced and is a safety feature: **accessory off → collar
-open → cap unscrew**. The clamshell latch sits on the crown deck under the
+open → cap off**. The clamshell latch sits on the crown deck under the
 bayonet ring, so a mounted accessory physically covers it; and the collar must
 come off before the cap can be serviced, so the cap can never be opened by
 anything that got past the accessory.
@@ -65,7 +65,7 @@ anything that got past the accessory.
 
 | Feature | Value | Basis |
 |---|---|---|
-| Bore over skirt | r 16.22 (fit 0.25) | same class as `fit_thread_r` |
+| Bore over skirt | r 16.22 (fit 0.25) | same class as `fit_lug_r` |
 | Wall | 1.55 mm (r 16.22–17.77) | ≥3 perimeters at 0.4 nozzle |
 | Collar OD | **35.54 mm** | still inside the 40.14 tab span |
 | Height | z −0.60 → 11.65 (12.25 mm part) | bead zone to bayonet top; lowest point 0.40 above the floor plane |
@@ -115,7 +115,7 @@ same profile as the enclosure.
 deck + lip, bayonet blank), ~15 min print, mating `coupon_flangering` — a base
 slice of the grooved body. Both are generated and exported by
 `../cad/hen_tag_platform.py`. Settles bore fit and bead click before
-committing to full halves — same philosophy as the thread coupons in
+committing to full halves — same philosophy as the closure coupons in
 `../DESIGN.md`.
 
 ## UNVERIFIED

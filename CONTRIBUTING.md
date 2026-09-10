@@ -14,9 +14,9 @@ to follow the same discipline.
   everything itself — no virtualenv to set up, nothing installed into the
   repository.
 - Python **3.11–3.12** (the scripts pin `requires-python = ">=3.11,<3.13"`).
-- [build123d](https://build123d.readthedocs.io/) (with `bd_warehouse` for
-  threads) is the modelling library. Changes should stay in real B-rep solids
-  — fillets, threads, boolean ops — not hand-authored meshes.
+- [build123d](https://build123d.readthedocs.io/) is the modelling library.
+  Changes should stay in real B-rep solids — fillets, sweeps, boolean ops —
+  not hand-authored meshes.
 
 ## Before opening a PR
 
@@ -24,8 +24,9 @@ Run, from `cad/`, and make sure all of these pass:
 
 ```sh
 uv run --python 3.12 hen_tag_enclosure.py   # rebuild + re-export
-uv run --python 3.12 verify.py              # 29 machine checks; must exit 0
+uv run --python 3.12 verify.py              # 38 machine checks; must exit 0
 uv run --python 3.12 test_cap_marking.py    # cap-generator test suite; must exit 0
+uv run --python 3.12 slice_check.py         # real-slicer check; skips if Bambu Studio is absent
 ```
 
 `verify.py` is the gate: it checks interference, wall thickness, seal and
@@ -37,13 +38,13 @@ eyeballing a render. A change that regenerates geometry without a clean
 
 `verify.py` passing means the model is internally consistent — not that it
 prints or fits. For any change to the enclosure's fit-critical geometry
-(thread, seal groove, cavity dimensions, harness tabs), either:
+(bayonet lugs and channels, seal groove, cavity dimensions, harness tabs), either:
 
 - print the relevant fit coupon (`out/coupon_*.stl`, or add a new one) and
   report the result, or
 - state explicitly in the PR why a coupon isn't warranted for this change
   (e.g. a change confined to the cap's decorative lettering, which does not
-  touch the thread, seal or envelope).
+  touch the closure, seal or envelope).
 
 Do not claim a fit is confirmed without a printed part behind it.
 

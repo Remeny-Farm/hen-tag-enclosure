@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.11,<3.13"
-# dependencies = ["build123d", "bd_warehouse"]
+# dependencies = ["build123d"]
 # ///
 """Per-tag cap: clear shell + big coin lettering + accent core ring.
 

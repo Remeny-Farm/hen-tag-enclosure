@@ -1,18 +1,21 @@
 # /// script
 # requires-python = ">=3.11,<3.13"
-# dependencies = ["build123d", "bd_warehouse"]
+# dependencies = ["build123d"]
 # ///
 """Verification pass: assemble the parts virtually and measure what matters.
 
 Checks nobody can eyeball reliably:
-  1. do body and cap collide when screwed together?
+  1. do body and cap collide in the locked position?
   2. does the flipped board fit, holder down into its pocket?
   3. does the fill actually retain the holder?
   4. is there head clearance, and does the foam ring span it while leaving the
      LED window clear?
-  5. can the cap be assembled at all -- the check that caught thread-low?
+  5. does the bayonet work -- cap drops on at the entry angle, lugs run free
+     to the lock angle, the ramp then wedges, and the locked cap cannot be
+     pulled off?
   6. is every wall thick enough to print watertight?
   7. do the harness tabs take an 8 mm elastic, and is the underside flat?
+  8. is any downward-facing area left unsupported in the print orientation?
 
 Also emits half-section STLs so the internals can be inspected visually.
 """
@@ -24,7 +27,7 @@ import build123d as bd
 
 sys.path.insert(0, str(Path(__file__).parent))
 from hen_tag_enclosure import (  # noqa: E402
-    OUT, P, build_body, build_cap, cyl, ring,
+    OUT, P, build_body, build_cap, cyl,
 )
 
 FAIL: list[str] = []
@@ -36,6 +39,10 @@ def check(ok: bool, label: str, detail: str, warn_only: bool = False) -> None:
     if not ok:
         (WARN if warn_only else FAIL).append(label)
     print(f"  [{tag}] {label:38} {detail}")
+
+
+def vol(shape) -> float:
+    return shape.volume if shape is not None else 0.0
 
 
 p = P
@@ -50,14 +57,12 @@ pcb = cyl(p.r_pcb, p.pcb_env_h, z=p.z_pcb_bottom)
 board = holder + pcb
 
 print("\n--- 1. assembly interference -----------------------------------------")
-clash = body & cap
-clash_vol = clash.volume if clash is not None else 0.0
-check(clash_vol < 1.0, "body/cap collision",
-      f"{clash_vol:.3f} mm3 overlap (threads should mate, not fight)")
+clash_vol = vol(body & cap)
+check(clash_vol < 1.0, "body/cap collision, locked",
+      f"{clash_vol:.3f} mm3 overlap (lugs should touch the lips, not fight)")
 
 print("\n--- 2. board fit -----------------------------------------------------")
-hit = board & (body + cap)
-hit_vol = hit.volume if hit is not None else 0.0
+hit_vol = vol(board & (body + cap))
 check(hit_vol < 0.01, "board vs enclosure",
       f"{hit_vol:.4f} mm3 -- board must not touch any wall")
 
@@ -82,8 +87,7 @@ probe = (bd.Pos(p.holder_offset, 0, 0.5) * bd.Cylinder(
     - bd.Pos(p.holder_offset, 0, 0.5) * bd.Cylinder(
         p.r_pocket, p.z_fill_top - 1.0,
         align=(bd.Align.CENTER, bd.Align.CENTER, bd.Align.MIN)))
-backed = (probe & body).volume if (probe & body) is not None else 0.0
-frac = backed / probe.volume
+frac = vol(probe & body) / probe.volume
 check(frac > 0.80, "holder circumference backed by plastic",
       f"{frac * 100:.0f}% (the rest is the tangent point, backed by the wall)")
 
@@ -105,32 +109,81 @@ check(True, "stack heights still assembling",
       f"{p.stack_h - (p.foam_t - 0.2):.1f}-{p.stack_h + head:.1f} mm tolerated "
       f"(nominal {p.stack_h:.1f})")
 
-print("\n--- 5. assembly path -------------------------------------------------")
-r_fem_apex = p.r_thread_minor + p.fit_thread_r
-check(r_fem_apex > p.r_core, "cap thread clears the seal band",
-      f"crest r {r_fem_apex:.2f} vs band r {p.r_core:.2f} "
-      f"(+{r_fem_apex - p.r_core:.2f} mm)")
+print("\n--- 5. bayonet closure -----------------------------------------------")
+# The cap is modelled in its locked pose. pose(phi) turns it back toward the
+# entry angle: phi = 0 is lugs-in-the-entry-slots, phi = cam_lock is nominal
+# contact. dz lifts it off the flange.
+
+
+def pose(phi: float, dz: float = 0.0) -> bd.Solid:
+    return bd.Pos(0, 0, dz) * (bd.Rot(0, 0, p.cam_lock - phi) * cap)
+
+
+def clash(phi: float, dz: float = 0.0) -> float:
+    return vol(body & pose(phi, dz))
+
+
+# a) the cap drops straight on with the entry slots over the lugs
+drop = max(clash(0.0, dz) for dz in (3.0, 2.0, 1.0, 0.5, 0.0))
+check(drop < 0.01, "cap drops on at the entry angle",
+      f"{drop:.3f} mm3 worst overlap on the way down")
+
+# b) turning clockwise, the lugs run free until the ramp meets them
+free = max(clash(phi) for phi in (5.0, 10.0, 15.0, 20.0, 25.0, 28.0))
+check(free < 0.01, "lugs run free to the lock angle",
+      f"{free:.3f} mm3 worst overlap over 0-28 deg")
+
+# c) past nominal contact the ramp wedges: this is what tightens the cap
+wedge = clash(p.cam_lock + 4.0)
+check(wedge > 0.05, "ramp wedges past the lock angle",
+      f"{wedge:.3f} mm3 interference at +4 deg -> cap tightens like a thread")
+
+# d) locked, the cap cannot be lifted off; at the entry angle it can
+held = clash(p.cam_lock, 0.6)
+check(held > 1.0, "locked cap is retained",
+      f"{held:.2f} mm3 lug/lip overlap when lifted 0.6 mm")
+lift = clash(0.0, 1.0)
+check(lift < 0.01, "cap lifts off at the entry angle",
+      f"{lift:.3f} mm3 overlap when lifted 1.0 mm")
+
+# e) geometry the sweep cannot express
+check(p.helix_deg < 6.0, "ramp is self-locking",
+      f"{p.helix_deg:.1f} deg helix angle (PETG friction angle ~11 deg)")
+lo, hi = p.cam_window
+check(lo <= -0.25 and hi >= 0.25, "ramp absorbs print error",
+      f"{lo:+.2f}..{hi:+.2f} mm axial, {0.05 / p.cam_rate:.1f} deg per 0.05 mm")
+n_ok = p.lug_n * (p.entry_half + p.chan_end) < 360.0
+check(n_ok, "channels fit around the skirt",
+      f"{p.lug_n} x {p.entry_half + p.chan_end:.0f} deg of {360:.0f}")
+import math  # noqa: E402
+bear = p.lug_n * math.radians(p.lug_arc) * (p.r_core + p.bear_w / 2) * min(
+    p.bear_w - p.fit_seal_r, p.bear_w)
+check(bear >= 4.0, "bearing flat area",
+      f"{bear:.1f} mm2 over {p.lug_n} lugs (flat-on-flat, parallel helices)")
 check(p.r_cap_seal_bore > p.r_core, "cap bore clears the seal band",
       f"bore r {p.r_cap_seal_bore:.2f} vs band r {p.r_core:.2f}")
-check(p.z_groove_lo > p.z_thread_hi, "O-ring never crosses the thread",
-      f"groove starts z{p.z_groove_lo:.2f}, thread ends z{p.z_thread_hi:.2f}")
-# Tabs must not foul the cap as it turns.
-check((cap & body).volume < 1.0 if (cap & body) is not None else True,
-      "tabs clear the rotating cap", f"tab root ends at r {p.r_cap_out:.2f}")
+check(p.z_groove_lo > p.z_chan_hi, "O-ring never crosses the lugs",
+      f"groove starts z{p.z_groove_lo:.2f}, channels end z{p.z_chan_hi:.2f}")
+check(clash_vol < 1.0, "tabs clear the rotating cap",
+      f"tab root ends at r {p.r_cap_out:.2f}")
 
 print("\n--- 6. wall thickness ------------------------------------------------")
 min_wall = 2 * p.nozzle * 0.9
-check(p.r_thread_minor - p.r_cav >= min_wall, "body wall under thread root",
-      f"{p.r_thread_minor - p.r_cav:.2f} mm (need >= {min_wall:.2f})")
-check(p.body_wall >= min_wall, "body wall at seal band", f"{p.body_wall:.2f} mm")
+check(p.body_wall >= min_wall, "body wall under the lugs and seal band",
+      f"{p.body_wall:.2f} mm (need >= {min_wall:.2f})")
 check(p.r_cap_out - p.r_groove_root >= min_wall, "cap wall behind O-ring groove",
       f"{p.r_cap_out - p.r_groove_root:.2f} mm")
-check(p.r_cap_out - p.r_cap_thread_root >= min_wall, "cap wall behind thread",
-      f"{p.r_cap_out - p.r_cap_thread_root:.2f} mm")
+check(p.r_cap_out - p.r_cap_chan >= min_wall, "cap wall behind the channels",
+      f"{p.r_cap_out - p.r_cap_chan:.2f} mm")
 scallop = 1.4 - 1.15
 check(p.r_cap_out - scallop - p.r_groove_root >= min_wall * 0.8,
       "cap wall under grip scallop",
       f"{p.r_cap_out - scallop - p.r_groove_root:.2f} mm")
+lip_t = p.z_lip_lo - p.z_shoulder
+check(lip_t >= 4 * p.layer, "lip at its thin end",
+      f"{lip_t:.2f} mm ({lip_t / p.layer:.1f} layers)")
+check(p.bear_w <= 1.5 * p.nozzle, "bearing flat is a printable overhang",
+      f"{p.bear_w:.2f} mm flat, the rest chamfered at {p.chamfer_deg:.0f} deg")
 check(p.floor_t >= 3 * p.layer, "cavity floor", f"{p.floor_t:.2f} mm")
 
 print("\n--- 7. harness tabs --------------------------------------------------")
@@ -138,7 +191,7 @@ print("\n--- 7. harness tabs --------------------------------------------------"
 elastic = bd.Pos(p.r_slot_in + p.strap_t / 2, 0, -p.floor_t - 2) * bd.Box(
     1.5, 8.0, p.floor_t + p.tab_top + 4,
     align=(bd.Align.CENTER, bd.Align.CENTER, bd.Align.MIN))
-blocked = (elastic & body).volume if (elastic & body) is not None else 0.0
+blocked = vol(elastic & body)
 check(blocked < 0.01, "8.0 mm elastic threads the slot",
       f"{blocked:.3f} mm3 obstructing")
 
@@ -151,7 +204,7 @@ check(p.tab_inner_wall >= 2 * p.nozzle, "wall between cap and slot",
 # Flat underside: nothing may sit below the floor plane.
 below = bd.Pos(0, 0, -p.floor_t - 6) * bd.Box(
     120, 120, 6, align=(bd.Align.CENTER, bd.Align.CENTER, bd.Align.MIN))
-proud = (below & body).volume if (below & body) is not None else 0.0
+proud = vol(below & body)
 check(proud < 0.01, "underside is flat", f"{proud:.3f} mm3 below the floor plane")
 
 bb = (body + cap).bounding_box()
@@ -162,19 +215,20 @@ print("\n--- 8. printability: unsupported overhangs ---------------------------"
 # Slicers flag downward-facing area that has nothing under it. Tessellate each
 # part in its print orientation and measure it, so an inverted chamfer or a
 # stray floating shelf cannot creep back in unnoticed.
-import math  # noqa: E402
 from collections import defaultdict  # noqa: E402
 
-# Per-part limits, calibrated against revision A, which printed successfully on
-# a Bambu Lab P1S. Two features are inherent and known-printable:
-#   body -- the thread's lower flanks, spread thinly over many layers
-#   cap  -- the O-ring groove's lower flank, which becomes a ~1.7 mm annular
-#           ceiling once the cap is flipped top-plate-down for printing
+# Per-part limits. Two features are inherent and accepted:
+#   body -- the lugs' bearing flats, one extrusion width wide, spread over
+#           the ramp helix
+#   cap  -- the O-ring groove's lower flank, which becomes a ~1.1 mm annular
+#           ceiling once the cap is flipped top-plate-down for printing; it
+#           printed on revision A
 # The limits sit just above those. The point is to catch NEW unsupported
 # geometry, not to re-argue features that have already been printed. The
 # inverted rim chamfer that triggered this check contributed 38 mm2 in a single
-# band, so it would have been caught here.
-CLUSTER_LIMIT = {"body": 25.0, "cap": 110.0}  # mm2 in one 0.1 mm height band
+# band, so it would have been caught here. The revision B thread flanks were
+# 9.4 mm2 (body) in one band and are gone.
+CLUSTER_LIMIT = {"body": 12.0, "cap": 110.0}  # mm2 in one 0.1 mm height band
 
 
 def overhangs(solid, name: str, bed_z: float) -> float:
@@ -235,6 +289,10 @@ def write(solid, name: str) -> None:
 write(body - half, "section_body")
 write(cap - half, "section_cap")
 write((body + cap) - half, "section_assembly")
+# Entry pose, lifted 1 mm: the lugs sit in the entry slots. Built as a
+# compound rather than a fuse -- OCCT mis-fuses the two helical solids in
+# this disjoint pose (a 277 mm3 result), while common/cut agree exactly.
+write(bd.Compound([body, pose(0.0, 1.0)]) - half, "section_entry")
 write(board - half, "section_board")
 write(board, "board_mock")
 

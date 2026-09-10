@@ -17,3 +17,7 @@ cap_*.3mf
 # ...except one worked sample pair, kept as the reference for what the feature does.
 !cap_67.3mf
 !cap_67_P1S.3mf
+
+# Bambu Studio CLI side effects of slice_check.py: never printed, never committed.
+result.json
+slice/

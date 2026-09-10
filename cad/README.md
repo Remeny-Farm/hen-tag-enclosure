@@ -2,7 +2,7 @@
 
 Parametric source for the hen tag enclosure. Solid B-rep modelling via
 [build123d](https://build123d.readthedocs.io/) on the OCCT kernel, so the output
-is real CAD geometry with true fillets and threads, exported as **STEP as well
+is real CAD geometry with true fillets and helical sweeps, exported as **STEP as well
 as STL** — the model stays editable in FreeCAD or any other CAD tool rather than
 being a dead triangle mesh.
 
@@ -13,7 +13,8 @@ first run. No virtualenv, and nothing is installed into the repository.
 
 ```sh
 uv run --python 3.12 hen_tag_enclosure.py   # build + export to out/
-uv run --python 3.12 verify.py              # 29 machine checks + half sections
+uv run --python 3.12 verify.py              # 38 machine checks + half sections
+uv run --python 3.12 slice_check.py         # real-slicer check, needs Bambu Studio
 ```
 
 First run downloads the OCCT wheel (~60 MB) and a CPython 3.12 toolchain; after
@@ -25,17 +26,16 @@ female coupon are flipped top-plate-down on export. Drop them on the plate as
 they are; re-orienting the cap makes its top plate a ~28 mm bridge. The STEP
 files keep the design coordinate system so the model stays readable in CAD.
 
-To re-check printability against the real slicer:
-
-```sh
-/Applications/BambuStudio.app/Contents/MacOS/BambuStudio \
-    --debug 4 --slice 0 --outputdir /tmp/s out/body.stl 2>&1 \
-  | grep -iE "max_cantilever_dist|CRITICAL"
-```
-
-`max_cantilever_dist` should be 0 for the body. The cap reports a non-zero value
-from the O-ring groove flank, which becomes a ceiling when flipped; it is below
-the warning threshold and printed fine on revision A.
+`slice_check.py` re-checks printability against the real slicer: it runs the
+Bambu Studio CLI on the four printables with the P1S 0.4 mm machine, the
+0.16 mm process, PETG Basic, and the three settings `../DESIGN.md` asks for
+(3 walls, Arachne, avoid crossing walls), then reads the G-code back and
+counts travel moves that fly across open air — the bore of the cap, the cavity
+and cell pocket of the body — where PETG leaves a string. It fails on a slicer
+warning or when a count exceeds a limit set just above the 2026-09-10 numbers.
+`--stock` slices with the untouched Bambu profile for comparison, `--keep`
+leaves the G-code in `out/slice/`. Skips with exit 0 when Bambu Studio is not
+installed.
 
 ## Per-tag cap markings — the deterministic tag generator
 
@@ -107,7 +107,7 @@ cracks sliced into "floating region" warnings) and refused if any non-manifold
 edge remains. Lettering defaults to **Verdana** with the full Hungarian glyph
 set; hairline strokes are lifted by dilation and any printable feature under
 0.58 mm is refused. Icons are parametric geometry, no emoji fonts. The cap's
-thread, seal and envelope are untouched — `build_cap()` is imported, not
+closure, seal and envelope are untouched — `build_cap()` is imported, not
 copied.
 
 ## Files
@@ -115,18 +115,20 @@ copied.
 | File | Role |
 |---|---|
 | `hen_tag_enclosure.py` | All geometry. `Params` at the top holds every dimension. |
-| `verify.py` | Interference, fit, wall thickness, seal and harness checks. |
+| `verify.py` | Interference, fit, bayonet, wall thickness, seal and harness checks. |
+| `slice_check.py` | Real-slicer check: warnings and open-air travel counts per part; `--project` writes the ready-to-print Bambu project. Needs Bambu Studio. |
+| `out/hen_tag_revC_P1S.3mf` | Bambu Studio project: body, cap and both coupons on one P1S plate, print settings baked in. |
 | `cap_marking.py` | Deterministic per-tag cap generator (number, message, icon, font). |
 | `test_cap_marking.py` | Generator test suite: envelope, rejections, determinism. |
 | `out/body.stl` / `.step` | Main housing. |
-| `out/cap.stl` / `.step` | Screw cap. |
-| `out/coupon_*.stl` | Thread + groove fit coupons. Only needed on a new printer — the fit is confirmed on a Bambu Lab P1S. |
+| `out/cap.stl` / `.step` | Bayonet cap. |
+| `out/coupon_*.stl` | Bayonet + groove fit coupons. Print these first: the bayonet has not been printed anywhere yet. |
 | `out/section_*.stl` | Half sections, for looking at the internals only. |
 
 ## Changing dimensions
 
 Every dimension lives in the `Params` dataclass. Derived values — groove depth,
-thread profile, cap diameter, Z stations — are computed properties, so changing
+lug and lip stations, cap diameter, Z stations — are computed properties, so changing
 one input propagates correctly instead of leaving stale constants behind.
 
 The values most likely to need correcting, all currently UNVERIFIED:
@@ -142,21 +144,28 @@ foam_id    = 16.0   # LED window through the foam ring
 
 Board orientation is **holder down, PCB up** — the LED has to look out through
 the cap, not at the bird. `cell_fill()` builds the crescent that retains the
-holder; `strap_tabs()` builds the in-plane side tabs.
+holder; `strap_tabs()` builds the in-plane side tabs; `body_lugs()` and
+`cap_channels()` build the two halves of the bayonet, both from one helical
+sweep helper so their bearing faces share a pitch.
 
 After any change, re-run `verify.py` before printing. It is what caught the
 assembly-path defect described in `../DESIGN.md`.
 
-## Thread fit
+## Bayonet fit
 
-If the coupons bind or rattle, adjust and regenerate — do not file the parts:
+Print the coupons and note where the cap stops turning freely. Nominal is 30°
+clockwise from the entry slots; anywhere from about 5° to 55° still locks. Then
+adjust and regenerate — do not file the parts:
 
 ```python
-fit_thread_r = 0.25   # radial clearance, male crest to female root
-fit_thread_a = 0.15   # axial backlash per flank
+cam_lock   = 30.0   # deg of rotation to nominal contact: raise if it locks early, lower if late
+fit_lug_r  = 0.15   # radial clearance, lug crest to channel root: raise if the lugs bind
+fit_lug_z  = 0.30   # axial clearance, lug top to channel ceiling
+cam_rate   = 0.012  # ramp rise per degree; lower for a longer, softer tightening
 ```
 
-Note for anyone extending this: a male/female thread pair generated at the same
-phase models as a collision, because the ridges land on each other instead of in
-the grooves. `female_thread()` phases the nut 180°. The clearances above are
-additional, and both are needed.
+Note for anyone extending this: the cap is modelled in its **locked** pose, so
+the cap solid is already the assembled one. `verify.py` turns it back toward
+the entry angle (`pose(phi)`) to prove the drop-on, the free run and the wedge.
+Lugs and lips are swept along helices of the same pitch; change `cam_rate` and
+both follow.
