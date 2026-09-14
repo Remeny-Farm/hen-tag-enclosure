@@ -35,3 +35,10 @@ cache/
 proof/
 full_plate.json
 full_plate.log
+
+# Per-tag body STLs of the four-body cap and the motif contact sheet: on demand.
+window_*.stl
+a_*.stl
+b_*.stl
+motifs.svg
+proof_*.svg
