@@ -1,0 +1,15 @@
+/* === Cap preview (SVG drawn from the generator's layout) === */
+.rc-cap-preview {
+  inline-size: 100%;
+  block-size: auto;
+  max-inline-size: var(--rc-panel-min);
+  display: block;
+  margin-inline: auto;
+}
+
+.rc-cap-preview__shell {
+  /* Clear PETG over the pale board: a cool tint of the paper. */
+  fill: color-mix(in srgb, var(--rc-sky) 22%, var(--rc-paper-bright));
+  stroke: color-mix(in srgb, var(--rc-stone) 60%, transparent);
+  stroke-width: 0.2;
+}
