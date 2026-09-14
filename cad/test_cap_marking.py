@@ -114,6 +114,28 @@ if "--bambu" in sys.argv:
     check(all_checks_passed(r) and "P1S.3mf" in r.stdout and f.exists(),
           "cap_88888_P1S.3mf produced with registration verify")
 
+print("=== catalog parity and design hash ===")
+sys.path.insert(0, str(HERE))
+from cap_design import design_hash, load_catalog, validate_design  # noqa: E402
+import cap_marking as cm  # noqa: E402
+cat = load_catalog()
+check(sorted(e["id"] for e in cat["icons"]) == sorted(k for k in cm.ICONS if k != "none"),
+      "catalog icons == generator ICONS")
+check(sorted(e["id"] for e in cat["centre_patterns"]) == sorted(cm.PATTERNS_CENTRE),
+      "catalog centre patterns == PATTERNS_CENTRE")
+check(sorted(e["id"] for e in cat["band_patterns"]) == sorted(cm.PATTERNS_BAND),
+      "catalog band patterns == PATTERNS_BAND")
+check(design_hash(67, "classic", "heart", None, "stripes") == "05dcdb796b921b25",
+      "design_hash test vector 1")
+check(design_hash(8, "meadow", None, "rings", None) == "0371884d05cc4f6b",
+      "design_hash test vector 2")
+check(validate_design(cat, {"serial": 67, "scheme": "classic", "icon": "heart",
+                            "centre": "rings", "band": None})
+      == ["icon and centre pattern are mutually exclusive"], "icon+centre rejected")
+check(validate_design(cat, {"serial": 0, "scheme": "nope", "icon": None, "centre": None,
+                            "band": None})[:2]
+      == ["serial must be an integer 1..99999", "unknown scheme 'nope'"], "serial/scheme rejected")
+
 # Tidy the per-test artifacts (gitignored anyway, but keep out/ readable).
 for pat in ("*_88888*", "*_31415*", "*_40404*", "*_1.*", "*_1_*", "*_7*", "marking_1.stl"):
     for f in OUT.glob(pat):
