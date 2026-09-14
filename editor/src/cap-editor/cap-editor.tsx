@@ -112,7 +112,7 @@ export function CapEditor({ henId, client, catalog, layout, copy, walletCopy, lo
   const schemeOptions: PickerOption<string>[] = catalog.schemes.map((s) => ({
     id: s.id,
     title: s.name[lang],
-    swatch: [s.text.hex, s.accent.hex],
+    swatch: [s.base.hex, s.text.hex, s.accent.hex],
     badge: s.price_grain === 0 ? copy.free : <Price amount={BigInt(s.price_grain)} locale={locale} />,
   }));
   const centreReach = layout.core_r;

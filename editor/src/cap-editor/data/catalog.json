@@ -1,37 +1,163 @@
 {
   "schema": "hen-cap-catalog/1",
   "generator_version": "dev",
+  "window": {
+    "filament": "Prusament PETG Clear"
+  },
   "schemes": [
-    {"id": "classic", "name": {"hu": "Klasszikus", "en": "Classic"},
-     "text": {"filament": "Bambu PETG Basic Black", "hex": "#101010"},
-     "accent": {"filament": "Bambu PETG Basic White", "hex": "#F4F4F0"},
-     "price_grain": 0},
-    {"id": "meadow", "name": {"hu": "Rét", "en": "Meadow"},
-     "text": {"filament": "Bambu PETG Basic Blue", "hex": "#1F5FBF"},
-     "accent": {"filament": "Bambu PETG Basic White", "hex": "#F4F4F0"},
-     "price_grain": 150},
-    {"id": "sunset", "name": {"hu": "Naplemente", "en": "Sunset"},
-     "text": {"filament": "Bambu PETG Basic Red", "hex": "#C8102E"},
-     "accent": {"filament": "Bambu PETG Basic Yellow", "hex": "#F3C43E"},
-     "price_grain": 300}
+    {
+      "id": "pasture",
+      "name": {
+        "hu": "Legelő",
+        "en": "Pasture"
+      },
+      "base": {
+        "filament": "Prusament PETG Pistachio Green",
+        "hex": "#A6C48A"
+      },
+      "text": {
+        "filament": "Prusament PETG Jet Black",
+        "hex": "#111111"
+      },
+      "accent": {
+        "filament": "Prusament PETG Signal White",
+        "hex": "#F2F2EE"
+      },
+      "price_grain": 0
+    },
+    {
+      "id": "bluedye",
+      "name": {
+        "hu": "Kékfestő",
+        "en": "Blue-dye"
+      },
+      "base": {
+        "filament": "Prusament PETG Ocean Blue",
+        "hex": "#1B4B7A"
+      },
+      "text": {
+        "filament": "Prusament PETG Signal White",
+        "hex": "#F2F2EE"
+      },
+      "accent": {
+        "filament": "Prusament PETG Chalky Blue",
+        "hex": "#6C93BF"
+      },
+      "price_grain": 100
+    },
+    {
+      "id": "gold",
+      "name": {
+        "hu": "Arany",
+        "en": "Gold"
+      },
+      "base": {
+        "filament": "Prusament PETG Galaxy Black",
+        "hex": "#1C1B20"
+      },
+      "text": {
+        "filament": "Prusament PETG Yellow Gold",
+        "hex": "#E2A72E"
+      },
+      "accent": {
+        "filament": "Prusament PETG Signal White",
+        "hex": "#F2F2EE"
+      },
+      "price_grain": 500
+    }
   ],
   "icons": [
-    {"id": "heart", "name": {"hu": "Szív", "en": "Heart"}},
-    {"id": "star", "name": {"hu": "Csillag", "en": "Star"}},
-    {"id": "flower", "name": {"hu": "Virág", "en": "Flower"}},
-    {"id": "egg", "name": {"hu": "Tojás", "en": "Egg"}},
-    {"id": "sun", "name": {"hu": "Nap", "en": "Sun"}},
-    {"id": "moon", "name": {"hu": "Hold", "en": "Moon"}}
+    {
+      "id": "heart",
+      "name": {
+        "hu": "Szív",
+        "en": "Heart"
+      }
+    },
+    {
+      "id": "star",
+      "name": {
+        "hu": "Csillag",
+        "en": "Star"
+      }
+    },
+    {
+      "id": "flower",
+      "name": {
+        "hu": "Virág",
+        "en": "Flower"
+      }
+    },
+    {
+      "id": "egg",
+      "name": {
+        "hu": "Tojás",
+        "en": "Egg"
+      }
+    },
+    {
+      "id": "sun",
+      "name": {
+        "hu": "Nap",
+        "en": "Sun"
+      }
+    },
+    {
+      "id": "moon",
+      "name": {
+        "hu": "Hold",
+        "en": "Moon"
+      }
+    }
   ],
   "centre_patterns": [
-    {"id": "rings", "name": {"hu": "Körök", "en": "Rings"}},
-    {"id": "solid", "name": {"hu": "Tele", "en": "Solid"}},
-    {"id": "dots", "name": {"hu": "Pöttyök", "en": "Dots"}}
+    {
+      "id": "rings",
+      "name": {
+        "hu": "Körök",
+        "en": "Rings"
+      }
+    },
+    {
+      "id": "solid",
+      "name": {
+        "hu": "Tele",
+        "en": "Solid"
+      }
+    },
+    {
+      "id": "dots",
+      "name": {
+        "hu": "Pöttyök",
+        "en": "Dots"
+      }
+    }
   ],
   "band_patterns": [
-    {"id": "stripes", "name": {"hu": "Csíkok", "en": "Stripes"}},
-    {"id": "dots", "name": {"hu": "Pöttyök", "en": "Dots"}},
-    {"id": "arc", "name": {"hu": "Ív", "en": "Arc"}}
+    {
+      "id": "stripes",
+      "name": {
+        "hu": "Csíkok",
+        "en": "Stripes"
+      }
+    },
+    {
+      "id": "dots",
+      "name": {
+        "hu": "Pöttyök",
+        "en": "Dots"
+      }
+    },
+    {
+      "id": "arc",
+      "name": {
+        "hu": "Ív",
+        "en": "Arc"
+      }
+    }
   ],
-  "fees": {"reedit_grain": 50, "replacement_grain": 500}
+  "fees": {
+    "reedit_grain": 50,
+    "replacement_grain": 500
+  }
 }

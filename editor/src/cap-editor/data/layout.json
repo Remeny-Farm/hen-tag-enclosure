@@ -82,5 +82,9 @@
   "orbit": 17.12,
   "r": 1.4
  },
- "schema": "hen-cap-layout/1"
+ "schema": "hen-cap-layout/1",
+ "window": {
+  "r_max": 11.5,
+  "r_min": 8.5
+ }
 }

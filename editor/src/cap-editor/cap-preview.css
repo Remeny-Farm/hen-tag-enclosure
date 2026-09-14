@@ -8,8 +8,15 @@
 }
 
 .rc-cap-preview__shell {
-  /* Clear PETG over the pale board: a cool tint of the paper. */
-  fill: color-mix(in srgb, var(--rc-sky) 22%, var(--rc-paper-bright));
-  stroke: color-mix(in srgb, var(--rc-stone) 60%, transparent);
+  /* The fill is the scheme's base filament (data attribute); only the rim
+     line is styled here. */
+  stroke: color-mix(in srgb, var(--rc-ink) 35%, transparent);
   stroke-width: 0.2;
+}
+
+.rc-cap-preview__window {
+  /* Clear PETG over the board: the night-sky surface token reads as the
+     dark board seen through the window, in either theme. */
+  fill: var(--rc-night-page);
+  opacity: 0.8;
 }

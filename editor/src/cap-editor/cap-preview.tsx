@@ -39,6 +39,10 @@ export function CapPreview({ design, catalog, layout, size, title }: Props) {
   const dim = size ? { width: size, height: size } : {};
   const textFill = scheme.text.hex;
   const accentFill = scheme.accent.hex;
+  const baseFill = scheme.base.hex;
+  // The clear LED window is an annulus through the base-coloured top plate;
+  // the board shows through it and the number overlaps it by design.
+  const windowPath = `${circle(0, 0, layout.window.r_max)} ${circle(0, 0, layout.window.r_min)}`;
   return (
     <svg className="rc-cap-preview" viewBox={`${-vb} ${-vb} ${2 * vb} ${2 * vb}`} role="img" aria-label={title} {...dim}>
       <defs>
@@ -47,7 +51,8 @@ export function CapPreview({ design, catalog, layout, size, title }: Props) {
         </clipPath>
       </defs>
       <g transform="scale(1,-1)">
-        <path d={discPath} className="rc-cap-preview__shell" fillRule="evenodd" clipPath="url(#rc-cap-disc)" />
+        <path data-part="base" d={discPath} fill={baseFill} className="rc-cap-preview__shell" fillRule="evenodd" clipPath="url(#rc-cap-disc)" />
+        <path data-part="window" d={windowPath} className="rc-cap-preview__window" fillRule="evenodd" />
         <path data-part="core" d={circle(0, 0, layout.core_r)} fill={accentFill} />
         {bandPath ? <path data-part="band" d={bandPath} fill={accentFill} fillRule="evenodd" /> : null}
         {centrePath ? <path data-part="centre" d={centrePath} fill={textFill} fillRule="evenodd" /> : null}

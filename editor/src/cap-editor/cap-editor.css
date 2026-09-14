@@ -105,10 +105,10 @@
 }
 
 .rc-cap-option__swatch {
-  inline-size: var(--rc-space-lg);
-  block-size: var(--rc-space-lg);
+  inline-size: var(--rc-space-xl);
+  block-size: var(--rc-space-xl);
   border-radius: var(--rc-radius-pill);
-  border: var(--rc-border-thin) solid color-mix(in srgb, var(--rc-ink) 25%, transparent);
+  box-shadow: 0 0 0 var(--rc-border-thin) color-mix(in srgb, var(--rc-ink) 25%, transparent);
 }
 
 .rc-cap-option__glyph {

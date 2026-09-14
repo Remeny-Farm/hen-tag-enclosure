@@ -79,6 +79,9 @@ def write_layout(path: Path) -> dict:
         "core_r": cm.CORE_R_OUT,
         "band": {"r_min": cm.BAND_R_MIN, "r_max": cm.BAND_R_MAX},
         "band_window": list(cm.BAND_WINDOW),
+        # The clear LED window of a base-coloured shell (spec §3, palettes
+        # 2026-09-14); the number band overlaps it, which is intended.
+        "window": {"r_min": cm.LED_RING[0], "r_max": cm.LED_RING[1]},
         "number": {"font_pt": cm.NUM_FONT, "centre_deg": 270.0,
                    "base_r": round((cm.BAND_R_MIN + cm.BAND_R_MAX) / 2, 3),
                    "stroke": round(2 * cm.GLYPH_FATTEN, 3),
@@ -97,9 +100,17 @@ def write_proof(path: Path, mk: bd.Sketch, core: bd.Sketch, scheme: dict) -> Non
     2D sketches: the authoritative preview a patron sees after the batch."""
     r = P.r_cap_out + 0.5
     text_hex, accent_hex = scheme["text"]["hex"], scheme["accent"]["hex"]
+    # Base-coloured shell with the clear LED window drawn as the board seen
+    # through it; a scheme without a base colour is the old all-clear shell.
+    base_hex = scheme.get("base", {}).get("hex", "#e9eef2")
+    lo, hi = cm.LED_RING
+    window = (f'<path d="M {hi} 0 A {hi} {hi} 0 1 0 {-hi} 0 A {hi} {hi} 0 1 0 {hi} 0 Z '
+              f'M {lo} 0 A {lo} {lo} 0 1 0 {-lo} 0 A {lo} {lo} 0 1 0 {lo} 0 Z" '
+              f'fill="#4a4f55" fill-rule="evenodd" opacity="0.85"/>') if "base" in scheme else ""
     svg = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{-r} {-r} {2 * r} {2 * r}" '
            f'width="256" height="256"><g transform="scale(1,-1)">'
-           f'<circle r="{P.r_cap_out:.2f}" fill="#e9eef2" stroke="#b7c0c8" stroke-width="0.2"/>'
+           f'<circle r="{P.r_cap_out:.2f}" fill="{base_hex}" stroke="#b7c0c8" stroke-width="0.2"/>'
+           f'{window}'
            f'<path d="{sketch_to_path(core)}" fill="{accent_hex}" fill-rule="evenodd"/>'
            f'<path d="{sketch_to_path(mk)}" fill="{text_hex}" fill-rule="evenodd"/>'
            f'</g></svg>\n')

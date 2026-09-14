@@ -15,9 +15,9 @@ import proofSample from './assets/proof-sample.svg?inline';
 // locale toggle. In chirp the (patron) page supplies the SDK client, the
 // hen from the route and the copy from useLocale().
 const HENS: CapDesign[] = [
-  { henId: 'h67', serial: 67, scheme: 'classic', icon: 'heart', centre: null, band: null, status: 'draft', designHash: '', proofUrl: null },
-  { henId: 'h8', serial: 8, scheme: 'meadow', icon: null, centre: 'rings', band: 'dots', status: 'locked', designHash: '0371884d05cc4f6b', proofUrl: null },
-  { henId: 'h12345', serial: 12345, scheme: 'sunset', icon: 'star', centre: null, band: 'stripes', status: 'installed', designHash: '', proofUrl: proofSample },
+  { henId: 'h67', serial: 67, scheme: 'pasture', icon: 'heart', centre: null, band: null, status: 'draft', designHash: '', proofUrl: null },
+  { henId: 'h8', serial: 8, scheme: 'bluedye', icon: null, centre: 'rings', band: 'dots', status: 'locked', designHash: 'baf8189d7242b555', proofUrl: null },
+  { henId: 'h12345', serial: 12345, scheme: 'gold', icon: 'star', centre: null, band: 'stripes', status: 'installed', designHash: '', proofUrl: proofSample },
 ];
 
 export function Page() {

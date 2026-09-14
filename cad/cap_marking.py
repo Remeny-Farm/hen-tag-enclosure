@@ -82,6 +82,7 @@ GAP_MIN = 1.0          # opaque wall between the marking and the clear ring
 # opaque-shell + clear-ring layout: at the 2.9 mm band the lettering was
 # unreadable, and the customer look wanted a clear body anyway.
 LED_R = 10.0           # LED centre 2.5 mm in from the Ø25 edge; operator caliper
+LED_RING = (8.5, 11.5)  # the annulus the LED can land in; kept >= 60 % clear of inlays
 FOAM_INNER = (16.0, 12.0)   # foam ring kept inboard, off the LED radius
 
 # --- accent core (third colour) ---------------------------------------------
@@ -399,7 +400,7 @@ def pattern_gap_ok(sk: bd.Sketch) -> bool:
 
 def led_ring_clear_fraction(*inlays: bd.Sketch) -> float:
     """Fraction of the LED ring (r 8.5-11.5) not covered by any inlay."""
-    ring = bd.Circle(11.5) - bd.Circle(8.5)
+    ring = bd.Circle(LED_RING[1]) - bd.Circle(LED_RING[0])
     covered = 0.0
     for sk in inlays:
         hit = ring & sk
@@ -767,8 +768,8 @@ def main() -> None:
     ap.add_argument("--layout-json", default=None,
                     help="also write the preview layout JSON (hen-cap-layout/1) here")
     ap.add_argument("--proof", default=None, help="write a top-view proof SVG here")
-    ap.add_argument("--scheme", default="classic",
-                    help="catalog scheme id for the proof colours (default classic)")
+    ap.add_argument("--scheme", default="pasture",
+                    help="catalog scheme id for the proof colours (default pasture)")
     ap.add_argument("--skip-bambu", action="store_true",
                     help="skip the Bambu Studio project export (tests, CI)")
     a = ap.parse_args()

@@ -4,13 +4,25 @@ export type PickerOption<T extends string | null> = {
   id: T;
   title: string;
   badge?: ReactNode;
-  // Two filament hexes from the catalog (text, accent) rendered as a swatch.
-  swatch?: [string, string];
+  // Three filament hexes from the catalog (base, text, accent) rendered as a
+  // swatch: base ring around a disc split into text and accent.
+  swatch?: [string, string, string];
   // An SVG path from layout.json (mm, y up) drawn as a small glyph; `reach`
   // is the radius the glyph fits in (7.4 for centre elements, 15.4 for the
   // band, whose window sits at the top of the cap).
   glyph?: { d: string; reach: number };
 };
+
+// Fill values are catalog filament colours (data), never design literals.
+function Swatch({ base, text, accent }: { base: string; text: string; accent: string }) {
+  return (
+    <svg className="rc-cap-option__swatch" viewBox="-10 -10 20 20" aria-hidden="true" focusable="false">
+      <circle r="10" fill={base} />
+      <path d="M 0 -6 A 6 6 0 0 1 0 6 Z" fill={accent} />
+      <path d="M 0 -6 A 6 6 0 0 0 0 6 Z" fill={text} />
+    </svg>
+  );
+}
 
 function Glyph({ d, reach }: { d: string; reach: number }) {
   const r = reach + 0.5;
@@ -55,14 +67,7 @@ export function OptionGroup<T extends string | null>({ label, name, options, val
                 onChange={() => onChange(o.id)}
                 aria-label={o.title}
               />
-              {o.swatch ? (
-                <span
-                  className="rc-cap-option__swatch"
-                  aria-hidden="true"
-                  // design-tokens-allow: the two values are catalog filament colours (data), not design literals
-                  style={{ background: `linear-gradient(135deg, ${o.swatch[0]} 50%, ${o.swatch[1]} 50%)` }}
-                />
-              ) : null}
+              {o.swatch ? <Swatch base={o.swatch[0]} text={o.swatch[1]} accent={o.swatch[2]} /> : null}
               {o.glyph ? <Glyph d={o.glyph.d} reach={o.glyph.reach} /> : null}
               <span className="rc-cap-option__title">{o.title}</span>
               {o.badge ? <span className="rc-cap-option__badge">{o.badge}</span> : null}

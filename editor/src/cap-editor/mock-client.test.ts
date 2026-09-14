@@ -5,7 +5,7 @@ import { createMockClient } from './mock-client.js';
 import type { CapDesign } from './types.js';
 
 const hen: CapDesign = {
-  henId: 'h1', serial: 67, scheme: 'classic', icon: 'heart', centre: null, band: null,
+  henId: 'h1', serial: 67, scheme: 'pasture', icon: 'heart', centre: null, band: null,
   status: 'draft', designHash: '', proofUrl: null,
 };
 const client = (balance = 1000n, status: CapDesign['status'] = 'draft') =>
@@ -21,14 +21,14 @@ test('lock on a free scheme charges nothing and recomputes the hash', async () =
 
 test('lock on a paid scheme charges its catalog price', async () => {
   const c = client(200n);
-  await c.save('h1', { scheme: 'meadow', icon: 'star', centre: null, band: 'dots' });
+  await c.save('h1', { scheme: 'bluedye', icon: 'star', centre: null, band: 'dots' });
   await c.lock('h1');
-  expect((await c.getWallet()).balance).toBe(50n);
+  expect((await c.getWallet()).balance).toBe(100n);
 });
 
 test('lock refuses when grain is short and leaves the draft untouched', async () => {
   const c = client(10n);
-  await c.save('h1', { scheme: 'sunset', icon: null, centre: 'rings', band: null });
+  await c.save('h1', { scheme: 'gold', icon: null, centre: 'rings', band: null });
   await expect(c.lock('h1')).rejects.toMatchObject({ code: 'INSUFFICIENT_GRAIN' });
   expect((await c.load('h1')).status).toBe('draft');
 });
@@ -52,13 +52,13 @@ test('replacement from installed opens a new draft and charges the fee', async (
 });
 
 test('save rejects an icon together with a centre pattern and unknown ids', async () => {
-  await expect(client().save('h1', { scheme: 'classic', icon: 'heart', centre: 'rings', band: null }))
+  await expect(client().save('h1', { scheme: 'pasture', icon: 'heart', centre: 'rings', band: null }))
     .rejects.toMatchObject({ code: 'CATALOG_MISMATCH' });
-  await expect(client().save('h1', { scheme: 'classic', icon: 'unicorn', centre: null, band: null }))
+  await expect(client().save('h1', { scheme: 'pasture', icon: 'unicorn', centre: null, band: null }))
     .rejects.toMatchObject({ code: 'CATALOG_MISMATCH' });
 });
 
 test('save on a locked design is refused', async () => {
-  await expect(client(0n, 'locked').save('h1', { scheme: 'classic', icon: null, centre: null, band: null }))
+  await expect(client(0n, 'locked').save('h1', { scheme: 'pasture', icon: null, centre: null, band: null }))
     .rejects.toMatchObject({ code: 'NOT_EDITABLE' });
 });

@@ -135,7 +135,8 @@ check(set(lay["icons"]) == {"heart", "star", "flower", "egg", "sun", "moon"}, "l
 check(set(lay["centre_patterns"]) == {"rings", "solid", "dots"} and set(lay["band_patterns"]) == {"stripes", "dots", "arc"},
       "layout patterns complete")
 svg = (OUT / "proof_67.svg").read_text()
-check(svg.count("<path") == 2 and "#101010" in svg and "#F4F4F0" in svg, "proof has both colours")
+check(svg.count("<path") == 3 and "#111111" in svg and "#F2F2EE" in svg and "#A6C48A" in svg,
+      "proof has base, window, text and accent colours")
 
 print("=== catalog parity and design hash ===")
 sys.path.insert(0, str(HERE))
@@ -148,11 +149,11 @@ check(sorted(e["id"] for e in cat["centre_patterns"]) == sorted(cm.PATTERNS_CENT
       "catalog centre patterns == PATTERNS_CENTRE")
 check(sorted(e["id"] for e in cat["band_patterns"]) == sorted(cm.PATTERNS_BAND),
       "catalog band patterns == PATTERNS_BAND")
-check(design_hash(67, "classic", "heart", None, "stripes") == "05dcdb796b921b25",
+check(design_hash(67, "pasture", "heart", None, "stripes") == "0ea9d1eb0b0e95b6",
       "design_hash test vector 1")
-check(design_hash(8, "meadow", None, "rings", None) == "0371884d05cc4f6b",
+check(design_hash(8, "bluedye", None, "rings", None) == "baf8189d7242b555",
       "design_hash test vector 2")
-check(validate_design(cat, {"serial": 67, "scheme": "classic", "icon": "heart",
+check(validate_design(cat, {"serial": 67, "scheme": "pasture", "icon": "heart",
                             "centre": "rings", "band": None})
       == ["icon and centre pattern are mutually exclusive"], "icon+centre rejected")
 check(validate_design(cat, {"serial": 0, "scheme": "nope", "icon": None, "centre": None,

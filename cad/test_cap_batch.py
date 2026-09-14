@@ -44,14 +44,14 @@ def variant(name, mutate):
 shutil.rmtree(OUT, ignore_errors=True)
 print("=== happy path ===")
 r = run(FIX)
-plate = OUT / "plate_2026-09-14-classic-01_P1S.3mf"
-manifest = OUT / "plate_2026-09-14-classic-01_manifest.csv"
+plate = OUT / "plate_2026-09-14-pasture-01_P1S.3mf"
+manifest = OUT / "plate_2026-09-14-pasture-01_manifest.csv"
 check(r.returncode == 0, "batch runs", "" if r.returncode == 0 else (r.stdout + r.stderr)[-400:])
 check(plate.exists() and manifest.exists(), "plate and manifest written")
 rows = manifest.read_text().splitlines() if manifest.exists() else []
 check(rows[:1] == ["position,serial,hen_name,design_hash"] and len(rows) == 4
       and rows[1].startswith("1A,67,") and rows[3].startswith("3A,3,"), "manifest rows", str(rows[:2]))
-check((OUT / "proof" / "05dcdb796b921b25.svg").exists() and (OUT / "proof" / "fc52296fdb64d29e.svg").exists(),
+check((OUT / "proof" / "0ea9d1eb0b0e95b6.svg").exists() and (OUT / "proof" / "01f204914851bec3.svg").exists(),
       "proofs named by design hash")
 h1 = hashlib.sha256(plate.read_bytes()).hexdigest() if plate.exists() else ""
 r2 = run(FIX)

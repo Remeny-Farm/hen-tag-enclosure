@@ -10,7 +10,7 @@ import { createMockClient } from './mock-client.js';
 import type { CapDesign } from './types.js';
 
 const hen: CapDesign = {
-  henId: 'h1', serial: 67, scheme: 'classic', icon: 'heart', centre: null, band: null,
+  henId: 'h1', serial: 67, scheme: 'pasture', icon: 'heart', centre: null, band: null,
   status: 'draft', designHash: '', proofUrl: null,
 };
 
@@ -26,18 +26,18 @@ test('shows the preview, the wallet and the scheme options', async () => {
   setup();
   expect(await screen.findByRole('img', { name: 'Cap 67' })).toBeInTheDocument();
   expect(screen.getByLabelText('1,000 Golden Grain')).toBeInTheDocument();
-  expect(screen.getByRole('radio', { name: 'Meadow' })).toBeInTheDocument();
+  expect(screen.getByRole('radio', { name: 'Blue-dye' })).toBeInTheDocument();
   expect(screen.getByRole('radio', { name: 'Heart' })).toBeChecked();
 });
 
 test('locking a paid scheme asks for confirmation, charges, and locks', async () => {
   const client = setup(500n);
   const user = userEvent.setup();
-  await user.click(await screen.findByRole('radio', { name: 'Sunset' }));
+  await user.click(await screen.findByRole('radio', { name: 'Gold' }));
   await user.click(screen.getByRole('button', { name: /Lock design/ }));
   await user.click(screen.getByRole('button', { name: en.capEditor.lockConfirm }));
   await waitFor(() => expect(screen.getByText(en.capEditor.status.locked)).toBeInTheDocument());
-  expect((await client.getWallet()).balance).toBe(200n);
+  expect((await client.getWallet()).balance).toBe(0n);
   expect(screen.getByRole('button', { name: /Edit again/ })).toBeInTheDocument();
   expect(screen.queryByRole('dialog')).toBeNull();
 });
@@ -45,7 +45,7 @@ test('locking a paid scheme asks for confirmation, charges, and locks', async ()
 test('insufficient grain shows the mapped error and stays a draft', async () => {
   setup(10n);
   const user = userEvent.setup();
-  await user.click(await screen.findByRole('radio', { name: 'Meadow' }));
+  await user.click(await screen.findByRole('radio', { name: 'Blue-dye' }));
   await user.click(screen.getByRole('button', { name: /Lock design/ }));
   await user.click(screen.getByRole('button', { name: en.capEditor.lockConfirm }));
   expect(await screen.findByRole('alert')).toHaveTextContent(en.capEditor.errors.INSUFFICIENT_GRAIN);
@@ -66,7 +66,7 @@ test('a locked design is read-only and re-editing takes two taps and the fee', a
   const client = setup(1000n, 'locked');
   const user = userEvent.setup();
   const button = await screen.findByRole('button', { name: /Edit again/ });
-  expect(screen.getByRole('radio', { name: 'Meadow' })).toBeDisabled();
+  expect(screen.getByRole('radio', { name: 'Blue-dye' })).toBeDisabled();
   await user.click(button);
   expect(screen.getByRole('button', { name: en.capEditor.confirmAgain })).toBeInTheDocument();
   await user.click(screen.getByRole('button', { name: en.capEditor.confirmAgain }));
