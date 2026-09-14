@@ -39,6 +39,15 @@ test('a centre pattern replaces the icon, the barcode band is drawn per serial',
   expect(container.querySelector('[data-part="band"]')?.getAttribute('d')).toMatch(/^M /);
 });
 
+test('clear zones and the window render as glass tinted by the base colour', () => {
+  const { container } = render(
+    <CapPreview design={{ ...base, colours: { ...dc, number: 'clear', disc: 'clear' } }} catalog={catalog} layout={layout} title="cap" />,
+  );
+  expect(container.querySelector('[data-part="window"][data-clear]')).not.toBeNull();
+  expect(container.querySelector('[data-part="disc"][data-clear] path[fill-opacity]')?.getAttribute('fill')).toBe('#1C1B20');
+  expect(container.querySelector('[data-glyph][data-clear]')).not.toBeNull();
+});
+
 test('is deterministic', () => {
   const a = render(<CapPreview design={base} catalog={catalog} layout={layout} title="t" />).container.innerHTML;
   const b = render(<CapPreview design={base} catalog={catalog} layout={layout} title="t" />).container.innerHTML;

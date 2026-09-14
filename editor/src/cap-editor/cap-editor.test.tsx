@@ -64,6 +64,7 @@ test('the number cannot take the ring colour; moving the ring moves the number a
   const number = screen.getByRole('radiogroup', { name: 'Number' });
   const ring = screen.getByRole('radiogroup', { name: 'Outer ring' });
   expect(number.querySelector('input[aria-label^="Base colour"]')).toBeDisabled();
+  expect(number.querySelector('input[aria-label^="Clear"]')).toBeEnabled();
   await user.click(ring.querySelector('label[data-checked] ~ label, label:nth-child(2)') as Element); // colour A on the ring
   await waitFor(() => expect((client.state().hens[0].colours.ring)).toBe('a'));
   expect(client.state().hens[0].colours.number).not.toBe('a');

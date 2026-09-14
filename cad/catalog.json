@@ -2,7 +2,10 @@
   "schema": "hen-cap-catalog/2",
   "generator_version": "dev",
   "window": {
-    "filament": "Prusament PETG Clear"
+    "filament": "Prusament PETG Clear",
+    "hex": "#E6EDF1",
+    "role": "clear",
+    "note": "AMS slot 2 on every plate; the LED annulus is always clear, any other zone may choose it"
   },
   "schemes": [
     {

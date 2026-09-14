@@ -388,9 +388,11 @@ def build(number: str, top: str, icon: str, depth: float, centre: str | None = N
     inlays = {"number": inlay(lettering), "centre": inlay(ic), "band": inlay(band_sk)}
     host = {"number": "ring", "band": "ring", "centre": "disc"}
 
+    # The clear body starts as the mandatory LED annulus and grows by every
+    # zone or inlay the design assigns to clear, exactly like a and b.
     bodies = {}
-    for c in ("a", "b"):
-        body = None
+    for c in ("a", "b", "clear"):
+        body = window if c == "clear" else None
         for z, solid in zones.items():
             if col[z] == c:
                 body = solid if body is None else body + solid
@@ -402,11 +404,11 @@ def build(number: str, top: str, icon: str, depth: float, centre: str | None = N
             if solid is not None and col[k] == c:
                 body = solid if body is None else body + solid
         bodies[c] = body
-    shell = cap - window
-    for c in ("a", "b"):
+    shell = cap
+    for c in ("a", "b", "clear"):
         if bodies[c] is not None:
             shell = shell - bodies[c]
-    bodies = {"shell": shell, "window": window, **bodies}
+    bodies = {"shell": shell, "window": bodies["clear"], "a": bodies["a"], "b": bodies["b"]}
     sketches = {"marking": lettering, "centre": ic, "band": band_sk,
                 "ring": bd.Circle(p.r_cap_out) - bd.Circle(LED_RING[1]), "disc": bd.Circle(CORE_R_OUT)}
     return cap, bodies, sketches, spans, stroke_raw
@@ -764,9 +766,13 @@ def main() -> None:
           f"|cap - sum(parts)| = {gap_v:.4f} mm3 ({gap_v / cap.volume * 100:.4f}%), "
           f"bodies: {', '.join(present)}")
     wb = bodies["window"].bounding_box()
-    check(abs(wb.max.Z - z_top) < 1e-6 and abs(wb.min.Z - p.z_ceiling) < 1e-6,
-          "clear window through the whole plate",
-          f"z {wb.min.Z:.2f}..{wb.max.Z:.2f}, r {LED_RING[0]}..{LED_RING[1]}")
+    annulus = (bd.Pos(0, 0, p.z_ceiling) * bd.extrude(bd.Circle(LED_RING[1]) - bd.Circle(LED_RING[0]),
+                                                      amount=p.cap_top_t)) & cap
+    check(abs(wb.max.Z - z_top) < 1e-6 and abs(wb.min.Z - p.z_ceiling) < 1e-6
+          and abs(vol(annulus & bodies["window"]) - annulus.volume) < 1e-3,
+          "LED annulus is clear through the whole plate",
+          f"z {wb.min.Z:.2f}..{wb.max.Z:.2f}, r {LED_RING[0]}..{LED_RING[1]}"
+          + (", plus clear zones" if vol(bodies["window"]) > annulus.volume + 1e-3 else ""))
     for c in ("a", "b"):
         if bodies[c] is not None:
             bb = bodies[c].bounding_box()

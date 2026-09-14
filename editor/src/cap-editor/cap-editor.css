@@ -296,6 +296,11 @@
   transition: transform var(--rc-transition-fast) ease;
 }
 
+.rc-cap-colour__chip--clear {
+  background:
+    linear-gradient(135deg, var(--rc-paper-bright) 0 45%, color-mix(in srgb, var(--rc-sky) 35%, var(--rc-paper-bright)) 45% 55%, var(--rc-paper-bright) 55%);
+}
+
 .rc-cap-colour__swatch[data-checked='true'] .rc-cap-colour__chip {
   box-shadow: 0 0 0 var(--rc-focus-size) var(--rc-yolk);
   transform: scale(1.15);

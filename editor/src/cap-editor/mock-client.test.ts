@@ -66,6 +66,13 @@ test('zone colours are free otherwise: base number on a coloured ring is fine', 
   expect(d.colours.ring).toBe('a');
 });
 
+test('clear is a fourth colour for any zone, but never for both the number and its ring', async () => {
+  const d = await client().save('h1', { scheme: 'pasture', icon: 'heart', centre: null, band: null, colours: { ...dc, number: 'clear', disc: 'clear' } });
+  expect(d.colours.number).toBe('clear');
+  await expect(client().save('h1', { scheme: 'pasture', icon: 'heart', centre: null, band: null, colours: { ...dc, ring: 'clear', number: 'clear' } }))
+    .rejects.toMatchObject({ code: 'CATALOG_MISMATCH' });
+});
+
 test('save on a locked design is refused', async () => {
   await expect(client(0n, 'locked').save('h1', { scheme: 'pasture', icon: null, centre: null, band: null, colours: dc }))
     .rejects.toMatchObject({ code: 'NOT_EDITABLE' });

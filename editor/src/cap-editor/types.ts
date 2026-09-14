@@ -4,12 +4,13 @@ import type layoutJson from './data/layout.json';
 // The design state machine (spec §7.2). `replaced` is terminal.
 export type CapStatus = 'draft' | 'locked' | 'batched' | 'printed' | 'installed' | 'replaced';
 
-// A scheme is a base filament plus two free colours; a design assigns one of
-// the three to each zone of the top plate. The clear LED window is fixed.
-export type ColourRole = 'base' | 'a' | 'b';
+// A plate carries four filaments: the scheme's base (the shell), its two free
+// colours a and b, and clear. The LED annulus is always clear; every other
+// zone of the top plate may take any of the four.
+export type ColourRole = 'base' | 'a' | 'b' | 'clear';
 export type ZoneId = 'ring' | 'number' | 'disc' | 'centre' | 'band';
 export const ZONES: readonly ZoneId[] = ['ring', 'number', 'disc', 'centre', 'band'];
-export const COLOUR_ROLES: readonly ColourRole[] = ['base', 'a', 'b'];
+export const COLOUR_ROLES: readonly ColourRole[] = ['base', 'a', 'b', 'clear'];
 export type ZoneColours = Record<ZoneId, ColourRole>;
 
 export type CapDesign = {

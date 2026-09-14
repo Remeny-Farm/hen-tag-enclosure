@@ -14,9 +14,7 @@
   stroke-width: 0.2;
 }
 
-.rc-cap-preview__window {
-  /* Clear PETG over the board: the night-sky surface token reads as the
-     dark board seen through the window, in either theme. */
-  fill: var(--rc-night-page);
-  opacity: 0.8;
+.rc-cap-preview__glass {
+  /* Clear PETG: a light frosted layer; the base tint is painted over it. */
+  fill: var(--rc-paper-bright);
 }

@@ -106,7 +106,8 @@ def write_proof(path: Path, sketches: dict, scheme: dict, colours: dict) -> None
     2D sketches and the design's zone colours: the authoritative preview a
     patron sees after the batch."""
     r = P.r_cap_out + 0.5
-    hex_of = {"base": scheme["base"]["hex"], "a": scheme["a"]["hex"], "b": scheme["b"]["hex"]}
+    hex_of = {"base": scheme["base"]["hex"], "a": scheme["a"]["hex"], "b": scheme["b"]["hex"],
+              "clear": "#E6EDF1"}   # glass: the clear filament's display tint
     lo, hi = cm.LED_RING
     ring = f"M {r:.2f} 0 A {r:.2f} {r:.2f} 0 1 0 {-r:.2f} 0 A {r:.2f} {r:.2f} 0 1 0 {r:.2f} 0 Z"
     def circ(rr): return f"M {rr} 0 A {rr} {rr} 0 1 0 {-rr} 0 A {rr} {rr} 0 1 0 {rr} 0 Z"

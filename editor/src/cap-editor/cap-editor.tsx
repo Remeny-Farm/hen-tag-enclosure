@@ -165,6 +165,7 @@ export function CapEditor({ henId, client, catalog, layout, copy, walletCopy, lo
     { role: 'base', hex: scheme.base.hex, title: `${copy.colourRoles.base}: ${scheme.base.filament}` },
     { role: 'a', hex: scheme.a.hex, title: `${copy.colourRoles.a}: ${scheme.a.filament}` },
     { role: 'b', hex: scheme.b.hex, title: `${copy.colourRoles.b}: ${scheme.b.filament}` },
+    { role: 'clear', hex: catalog.window.hex, title: `${copy.colourRoles.clear}: ${catalog.window.filament}` },
   ];
 
   if (!design) {

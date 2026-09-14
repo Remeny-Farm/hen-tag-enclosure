@@ -17,7 +17,7 @@ export const en = {
     coloursLabel: 'Colours',
     limited: 'limited',
     totalTemplate: 'Total {amount}',
-    colourRoles: { base: 'Base colour', a: 'Colour A', b: 'Colour B' },
+    colourRoles: { base: 'Base colour', a: 'Colour A', b: 'Colour B', clear: 'Clear' },
     noneOption: 'None',
     free: 'Free',
     lock: 'Lock design',

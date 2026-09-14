@@ -16,7 +16,7 @@ export const hu = {
     coloursLabel: 'Színek',
     limited: 'limitált',
     totalTemplate: 'Összesen {amount}',
-    colourRoles: { base: 'Alapszín', a: 'A szín', b: 'B szín' },
+    colourRoles: { base: 'Alapszín', a: 'A szín', b: 'B szín', clear: 'Átlátszó' },
     noneOption: 'Nincs',
     free: 'Ingyenes',
     lock: 'Rögzítés',

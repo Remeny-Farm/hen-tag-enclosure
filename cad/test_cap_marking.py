@@ -64,6 +64,7 @@ matrix = [
     ("8",     ["--icon", "skull", "--band", "barcode", "--scheme", "gold",
                "--colours", "ring=a,number=base,disc=b,centre=a,band=b"]),
     ("9",     ["--icon", "sparkles", "--band", "checker", "--scheme", "bluedye"]),
+    ("10",    ["--icon", "moon", "--band", "arc", "--colours", "number=clear,disc=clear,centre=b,band=clear"]),
 ]
 for number, extra in matrix:
     r = run_cli(number, *extra)
@@ -103,6 +104,7 @@ for label, args, needle in [
     ("number same colour as the ring", ["7", "--colours", "number=base"], "must differ"),
     ("band same colour as the ring", ["7", "--band", "arc", "--colours", "ring=b"], "must differ"),
     ("bad colour role", ["7", "--colours", "ring=red"], "zone=role"),
+    ("clear number on a clear ring", ["7", "--colours", "ring=clear,number=clear"], "must differ"),
 ]:
     r = run_cli(*args)
     blob = r.stdout + r.stderr
@@ -181,7 +183,7 @@ check(validate_design(cat, {"serial": 0, "scheme": "nope", "icon": None, "centre
 
 # Tidy the per-test artifacts (gitignored anyway, but keep out/ readable).
 for pat in ("*_88888*", "*_31415*", "*_40404*", "*_1.*", "*_1_*", "*_7*", "*_1.stl",
-            "*_99999*", "*_3.*", "*_3_*", "*_4242*", "*_5.*", "*_5_*", "*_6.*", "*_6_*", "*_8.*", "*_8_*", "*_9.*", "*_9_*"):
+            "*_99999*", "*_3.*", "*_3_*", "*_4242*", "*_5.*", "*_5_*", "*_6.*", "*_6_*", "*_8.*", "*_8_*", "*_9.*", "*_9_*", "*_10.*", "*_10_*"):
     for f in OUT.glob(pat):
         f.unlink()
 

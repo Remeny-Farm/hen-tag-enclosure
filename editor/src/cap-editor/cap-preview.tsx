@@ -17,8 +17,19 @@ type Props = {
 // four bodies the generator builds. No hooks, no state.
 export function CapPreview({ design, catalog, layout, size, title }: Props) {
   const scheme = catalog.schemes.find((s) => s.id === design.scheme) ?? catalog.schemes[0];
-  const hexOf: Record<ColourRole, string> = { base: scheme.base.hex, a: scheme.a.hex, b: scheme.b.hex };
+  const hexOf: Record<ColourRole, string> = { base: scheme.base.hex, a: scheme.a.hex, b: scheme.b.hex, clear: catalog.window.hex };
   const fill = (zone: keyof typeof design.colours) => hexOf[design.colours[zone]];
+  const isClear = (zone: keyof typeof design.colours) => design.colours[zone] === 'clear';
+  // Clear PETG over the base-coloured body reads as frosted glass with the
+  // base tint: a light layer, then the base colour at low opacity.
+  const Glass = ({ d, part }: { d: string; part: string }) => (
+    <g data-part={part} data-clear="true">
+      <path d={d} className="rc-cap-preview__glass" fillRule="evenodd" />
+      <path d={d} fill={scheme.base.hex} fillOpacity={0.35} fillRule="evenodd" />
+    </g>
+  );
+  const Zone = ({ zone, d, part }: { zone: keyof typeof design.colours; d: string; part: string }) =>
+    isClear(zone) ? <Glass d={d} part={part} /> : <path data-part={part} d={d} fill={fill(zone)} fillRule="evenodd" />;
   const r = layout.cap_r;
   const vb = r + 1;
   const n = layout.number;
@@ -54,15 +65,23 @@ export function CapPreview({ design, catalog, layout, size, title }: Props) {
         </clipPath>
       </defs>
       <g transform="scale(1,-1)">
-        <path data-part="ring" d={discPath} fill={fill('ring')} className="rc-cap-preview__shell" fillRule="evenodd" clipPath="url(#rc-cap-disc)" />
-        <path data-part="window" d={windowPath} className="rc-cap-preview__window" fillRule="evenodd" />
-        <path data-part="disc" d={circle(0, 0, layout.core_r)} fill={fill('disc')} />
-        {bandPath ? <path data-part="band" d={bandPath} fill={fill('band')} fillRule="evenodd" /> : null}
-        {centrePath ? <path data-part="centre" d={centrePath} fill={fill('centre')} fillRule="evenodd" /> : null}
-        {iconPath ? <path data-part="icon" d={iconPath} fill={fill('centre')} fillRule="evenodd" /> : null}
+        <path d={discPath} fill={scheme.base.hex} className="rc-cap-preview__shell" fillRule="evenodd" clipPath="url(#rc-cap-disc)" />
+        <g clipPath="url(#rc-cap-disc)"><Zone zone="ring" d={discPath} part="ring" /></g>
+        <Glass d={windowPath} part="window" />
+        <Zone zone="disc" d={circle(0, 0, layout.core_r)} part="disc" />
+        {bandPath ? <Zone zone="band" d={bandPath} part="band" /> : null}
+        {centrePath ? <Zone zone="centre" d={centrePath} part="centre" /> : null}
+        {iconPath ? <Zone zone="centre" d={iconPath} part="icon" /> : null}
         {glyphs.map((g, i) => (
-          <g key={i} data-glyph={g.d} transform={`rotate(${g.theta + 90}) translate(0 ${-n.base_r})`}>
-            <path d={g.path} fill={fill('number')} stroke={fill('number')} strokeWidth={n.stroke} strokeLinejoin="round" fillRule="evenodd" />
+          <g key={i} data-glyph={g.d} data-clear={isClear('number') ? 'true' : undefined} transform={`rotate(${g.theta + 90}) translate(0 ${-n.base_r})`}>
+            {isClear('number') ? (
+              <>
+                <path d={g.path} className="rc-cap-preview__glass" stroke="var(--rc-paper-bright)" strokeWidth={n.stroke} strokeLinejoin="round" fillRule="evenodd" />
+                <path d={g.path} fill={scheme.base.hex} fillOpacity={0.35} stroke={scheme.base.hex} strokeOpacity={0.35} strokeWidth={n.stroke} strokeLinejoin="round" fillRule="evenodd" />
+              </>
+            ) : (
+              <path d={g.path} fill={fill('number')} stroke={fill('number')} strokeWidth={n.stroke} strokeLinejoin="round" fillRule="evenodd" />
+            )}
           </g>
         ))}
       </g>

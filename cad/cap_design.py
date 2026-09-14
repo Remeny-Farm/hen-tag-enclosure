@@ -21,7 +21,9 @@ CATALOG_SCHEMA = "hen-cap-catalog/2"
 HASH_VERSION = 2
 SERIAL_MAX = 99999
 ZONES = ("ring", "number", "disc", "centre", "band")
-COLOUR_ROLES = ("base", "a", "b")
+# base = the shell filament, a/b = the scheme's free colours, clear = the window
+# filament (AMS 2), selectable for any zone; the LED annulus is always clear.
+COLOUR_ROLES = ("base", "a", "b", "clear")
 
 
 def load_catalog(path: Path | None = None) -> dict:

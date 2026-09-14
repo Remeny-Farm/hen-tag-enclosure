@@ -123,8 +123,12 @@ export function ColourToggle({ label, name, choices, value, blocked, onChange, d
                 onChange={() => onChange(c.role)}
                 aria-label={c.title}
               />
-              {/* design-tokens-allow: catalog filament colour (data) */}
-              <span className="rc-cap-colour__chip" style={{ background: c.hex }} aria-hidden="true" />
+              {c.role === 'clear' ? (
+                <span className="rc-cap-colour__chip rc-cap-colour__chip--clear" aria-hidden="true" />
+              ) : (
+                /* design-tokens-allow: catalog filament colour (data) */
+                <span className="rc-cap-colour__chip" style={{ background: c.hex }} aria-hidden="true" />
+              )}
             </label>
           );
         })}
