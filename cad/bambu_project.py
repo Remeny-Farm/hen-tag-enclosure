@@ -138,13 +138,15 @@ def write_plate(path: Path, caps: list[dict], scheme: dict, batch_id: str) -> No
         + "".join(instances) + '</plate><assemble></assemble></config>')
     cfg = json.loads(TEMPLATE.read_text())
     cfg["printable_area"], cfg["bed_exclude_area"] = P1S_PRINTABLE_AREA, P1S_EXCLUDE
-    cfg["filament_type"] = ["PETG"] * 3
-    # Not patched: filament_colour. With three entries (one per AMS slot) the
-    # G-code export fails silently in Bambu Studio 02.08 (bisected 2026-09-14:
-    # every other edit passes, colours alone fail). The template keeps its
-    # single entry; the AMS slot colours are set on the printer and recorded
-    # in the manifest and README. The scheme argument stays in the signature
-    # so a future Bambu release can turn this on without an API change.
+    # Not patched: the per-filament arrays (filament_colour, filament_type).
+    # Bambu Studio 02.08 exported them with one entry next to three
+    # filament_settings_id entries; widening filament_colour to three makes
+    # the CLI's G-code export fail silently and widening filament_type floods
+    # it with group_nozzle_info errors (bisected 2026-09-14). The template
+    # stays as exported; AMS slot colours are set on the printer and recorded
+    # in the manifest and README. `scheme` stays in the signature so a future
+    # Bambu release can turn colours on without an API change.
+    del scheme
     cfg.update(RECOMMENDED)
     ctypes = (XML_HEAD + '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
               '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
