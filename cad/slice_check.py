@@ -178,13 +178,41 @@ def main() -> int:
         return 0
     stock = "--stock" in sys.argv
     keep = "--keep" in sys.argv
-    parts = [a for a in sys.argv[1:] if not a.startswith("--")] or list(OPEN_AIR)
+    plates = [Path(a).resolve() for a in sys.argv[1:] if a.endswith(".3mf")]
+    parts = [a for a in sys.argv[1:] if not a.startswith("--") and not a.endswith(".3mf")]
+    if not parts and not plates:
+        parts = list(OPEN_AIR)
     if "--project" in sys.argv:
-        return 0 if write_project(parts) else 1
-    overrides = {} if stock else RECOMMENDED
-    print("slicer check --", "STOCK Bambu profile" if stock else
-          "recommended settings: " + ", ".join(f"{k}={v}" for k, v in overrides.items()))
+        return 0 if write_project(parts or list(OPEN_AIR)) else 1
     fails = []
+    # A finished plate (cap_batch.py output) carries its own settings: slice
+    # it as-is and report objects, warnings and the slicer's estimate.
+    for plate in plates:
+        work = Path(tempfile.mkdtemp())
+        r = subprocess.run([str(APP), "--debug", "4", "--slice", "0", "--outputdir", str(work), str(plate)],
+                           capture_output=True, text=True)
+        log = r.stdout + r.stderr
+        g = work / "plate_1.gcode"
+        text = g.read_text(errors="replace") if g.exists() else ""
+        n_obj = len(set(re.findall(r"; OBJECT_ID: (\d+)", text)))
+        warn = [ln.strip()[:100] for ln in log.splitlines()
+                if re.search(r"floating cantilever|CRITICAL|\[error\]", ln, re.I)
+                and "[WARNING]" not in ln and "no filament colors" not in ln]
+        est = re.search(r"; total estimated time: (.+)", text)
+        m = re.search(r"max_cantilever_dist=([\d.]+)", log)
+        ok = g.exists() and not warn
+        print(f"  [{'PASS' if ok else 'FAIL'}] {plate.name:36} {n_obj} objects sliced"
+              + (f", {est.group(1).strip()}" if est else "")
+              + (f", max_cantilever_dist {float(m.group(1)):.0f}" if m else ""))
+        for w in warn:
+            print(f"         slicer: {w}")
+        if not ok:
+            fails.append(plate.name)
+        shutil.rmtree(work, ignore_errors=True)
+    overrides = {} if stock else RECOMMENDED
+    if parts:
+        print("slicer check --", "STOCK Bambu profile" if stock else
+              "recommended settings: " + ", ".join(f"{k}={v}" for k, v in overrides.items()))
     for name in parts:
         stl = OUT / f"{name}.stl"
         if not stl.exists():
@@ -198,7 +226,7 @@ def main() -> int:
         gcode, log = slice_part(stl, overrides, work)
         warn = [ln.strip()[:100] for ln in log.splitlines()
                 if re.search(r"floating cantilever|CRITICAL|\[error\]", ln, re.I)
-                and "no filament colors" not in ln]
+                and "[WARNING]" not in ln and "no filament colors" not in ln]
         m = re.search(r"max_cantilever_dist=([\d.]+)", log)
         cant = float(m.group(1)) if m else 0.0
         if gcode is None:
