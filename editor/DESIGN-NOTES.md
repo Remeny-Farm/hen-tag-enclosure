@@ -90,6 +90,23 @@ total, status and notes. Tested with accessible queries only.
   `onChange` of the pickers (Capacitor Haptics); the prototype only does the
   visual press.
 
+## Horizontal overflow: what bit us
+
+Two separate causes made the document scroll sideways on the Motif step:
+
+1. Grid tracks default to `auto`, so `.rc-cap-rails` and the rail group grew
+   to their content. Every link of the chain now has `min-inline-size: 0`
+   (`grid-template-columns: minmax(0, 1fr)` on the grid, `contain: inline-size`
+   on the group) and only `.rc-cap-rail` has `overflow-x: auto`.
+2. The visually hidden radio inputs are `position: absolute`; without a
+   positioned ancestor their containing block is the page, so the off-screen
+   inputs stretched the document even though the rail clipped its tiles.
+   `.rc-cap-tile` and `.rc-cap-card` are `position: relative`.
+
+`pnpm check:layout` (README, "Layout gate") guards both. Keyboard focus in a
+rail aligns the tile to its snap start (`inline: 'start'`): with `nearest`
+the proximity snap pulled the rail back and left the tile cut off.
+
 ## One shell change
 
 `RealChickenShell` sets `overflow-x: hidden`, which makes the shell a scroll

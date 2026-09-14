@@ -8,6 +8,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
+    "check:layout": "node test/layout.mjs",
     "sync:data": "cp ../cad/catalog.json src/cap-editor/data/catalog.json && cp ../cad/out/layout.json src/cap-editor/data/layout.json"
   },
   "dependencies": {

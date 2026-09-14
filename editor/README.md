@@ -45,3 +45,21 @@ path and a reviewer checklist: [`DESIGN-NOTES.md`](DESIGN-NOTES.md).
 | `src/cap-editor/types.ts` (`CapDesignClient`) + `mock-client.ts` | interface stays; SDK adapter in `apps/web/lib/`; mock stays for tests |
 | `src/page.tsx` | `apps/web/app/(patron)/my-hen/cap/page.tsx` + client wrapper |
 | `src/cap-editor/data/*.json` | data assets under `packages/real-chicken-ui/src/cap-editor/data/` |
+
+## Layout gate (manual, needs Playwright)
+
+`pnpm test` runs in jsdom and cannot see geometry. `pnpm check:layout` drives a
+real Chromium against a running dev server and fails on page-level horizontal
+overflow on any step at 360 / 390 / 1200 px, on a rail that does not scroll
+sideways on its own, on an arrow-focused tile left cut off at the rail edge,
+and on any chip / tile / tab / card under 44 px. Playwright is not a
+devDependency (browser download), so point `NODE_PATH` at an install that has
+it:
+
+```sh
+pnpm dev                                          # terminal 1
+NODE_PATH=/path/to/node_modules pnpm check:layout  # terminal 2
+```
+
+Run it before every UI change lands; the scoring reviewer checks the same
+things.

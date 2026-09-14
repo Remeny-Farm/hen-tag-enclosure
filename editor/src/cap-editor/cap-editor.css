@@ -326,6 +326,7 @@
 }
 
 .rc-cap-card {
+  position: relative;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
@@ -365,7 +366,7 @@
 .rc-cap-card__title { font-weight: var(--rc-weight-bold); }
 
 .rc-cap-card__blurb {
-  color: var(--rc-muted);
+  color: color-mix(in srgb, var(--rc-ink) 80%, var(--rc-paper));
   font-size: var(--rc-font-small-size);
   line-height: var(--rc-line-normal);
 }
@@ -376,9 +377,20 @@
 }
 
 /* --- rails ------------------------------------------------------------ */
+/* Every link of the chain is width-constrained: the rail is the only
+   element allowed to be wider than the panel, and it scrolls on its own.
+   Without `minmax(0, 1fr)` and `min-inline-size: 0` the grid tracks grow
+   to the content and the whole document scrolls sideways. */
 .rc-cap-rails {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--rc-space-md);
+  min-inline-size: 0;
+}
+
+.rc-cap-rail-group {
+  min-inline-size: 0;
+  contain: inline-size;
 }
 
 .rc-cap-rail-group__head {
@@ -406,19 +418,23 @@
 .rc-cap-rail {
   display: flex;
   gap: var(--rc-space-sm);
+  min-inline-size: 0;
   overflow-x: auto;
   overscroll-behavior-x: contain;
   scroll-snap-type: x proximity;
   scroll-padding-inline: var(--rc-space-sm);
   padding: var(--rc-space-xs) var(--rc-space-sm) var(--rc-space-sm);
-  margin-inline: calc(-1 * var(--rc-space-sm));
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
 }
 
 .rc-cap-rail::-webkit-scrollbar { display: none; }
 
+/* `position: relative` keeps the visually hidden radio (absolute) inside
+   the tile; without it the input's containing block is the page and the
+   off-screen inputs stretch the document sideways. */
 .rc-cap-tile {
+  position: relative;
   flex: 0 0 auto;
   scroll-snap-align: start;
   inline-size: calc(var(--rc-tap) * 2);
@@ -585,7 +601,7 @@
 }
 
 .rc-cap-bar__label {
-  color: var(--rc-muted);
+  color: var(--rc-ink);
   font-size: var(--rc-font-micro-size);
   letter-spacing: var(--rc-letter-caps);
   text-transform: uppercase;

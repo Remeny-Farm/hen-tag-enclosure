@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { FocusEvent, ReactNode } from 'react';
 
 import type { ColourRole } from './types.js';
 
@@ -100,6 +100,20 @@ function Glyph({ d, reach }: { d: string; reach: number }) {
   );
 }
 
+// Arrow keys move the native radio focus; the input is visually hidden, so
+// bring its tile into view inside the rail. The tile is aligned to its snap
+// start: with `inline: 'nearest'` the proximity snap would pull the rail
+// back and leave the tile cut off at the edge.
+function revealTile(event: FocusEvent<HTMLInputElement>) {
+  const tile = event.currentTarget.closest('.rc-cap-tile');
+  const rail = tile?.parentElement;
+  if (!tile || !rail || typeof tile.scrollIntoView !== 'function') return;
+  const t = tile.getBoundingClientRect();
+  const r = rail.getBoundingClientRect();
+  const hidden = t.left < r.left || t.right > r.right;
+  tile.scrollIntoView({ block: 'nearest', inline: hidden ? 'start' : 'nearest' });
+}
+
 // One radio group across several horizontally snapping rails, one rail per
 // pack: the 26 icons stay browsable with a thumb and never become a wall.
 export function PackRail<T extends string | null>({ label, name, groups, value, onChange, disabled }: RailProps<T>) {
@@ -119,7 +133,15 @@ export function PackRail<T extends string | null>({ label, name, groups, value, 
                 const checked = t.id === value;
                 return (
                   <label key={String(t.id)} className="rc-cap-tile rc-cap-press" data-checked={checked ? 'true' : undefined}>
-                    <input type="radio" name={name} className="rc-cap-sr-only" checked={checked} onChange={() => onChange(t.id)} aria-label={t.title} />
+                    <input
+                      type="radio"
+                      name={name}
+                      className="rc-cap-sr-only"
+                      checked={checked}
+                      onChange={() => onChange(t.id)}
+                      onFocus={revealTile}
+                      aria-label={t.title}
+                    />
                     {t.glyph ? <Glyph d={t.glyph.d} reach={t.glyph.reach} /> : <span className="rc-cap-tile__none" aria-hidden="true" />}
                     <span className="rc-cap-tile__title">{t.title}</span>
                     {t.badge ? <span className="rc-cap-tile__badge">{t.badge}</span> : null}
