@@ -40,7 +40,12 @@ MODEL_NS = ('xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02" '
             'xmlns:p="http://schemas.microsoft.com/3dmanufacturing/production/2015/06" '
             'requiredextensions="p"')
 BODY_EXTRUDER = {"shell": 1, "marking": 2, "core": 3}   # AMS slots
-CLEAR_DISPLAY_HEX = "#F4F4F0"   # slot 1 is clear PETG; shown as near-white in the slicer
+# Bambu Studio decides whether a package is its own project from this
+# metadata. Anything else is loaded as a "3mf from other vendor": project
+# settings are ignored, the plate defaults to 200 x 200 and every cap beyond
+# that is silently dropped (observed: 26 of 36 sliced). The version is the
+# one the settings template in bambu/ was exported from.
+BAMBU_APPLICATION = "BambuStudio-02.08.02.60"
 RECOMMENDED = {"wall_loops": "3", "wall_generator": "arachne", "reduce_crossing_wall": "1"}
 
 
@@ -118,7 +123,7 @@ def write_plate(path: Path, caps: list[dict], scheme: dict, batch_id: str) -> No
                          f'<metadata key="instance_id" value="0"/>'
                          f'<metadata key="identify_id" value="{100 + k}"/></model_instance>')
     model = (XML_HEAD + f'<model unit="millimeter" xml:lang="en-US" {MODEL_NS}>'
-             '<metadata name="Application">hen-tag cap_batch</metadata>'
+             f'<metadata name="Application">{BAMBU_APPLICATION}</metadata>'
              '<metadata name="BambuStudio:3mfVersion">1</metadata>'
              f'<metadata name="Title">{batch_id}</metadata>'
              f'<resources>{"".join(assemblies)}</resources>'
@@ -133,7 +138,13 @@ def write_plate(path: Path, caps: list[dict], scheme: dict, batch_id: str) -> No
         + "".join(instances) + '</plate><assemble></assemble></config>')
     cfg = json.loads(TEMPLATE.read_text())
     cfg["printable_area"], cfg["bed_exclude_area"] = P1S_PRINTABLE_AREA, P1S_EXCLUDE
-    cfg["filament_colour"] = [CLEAR_DISPLAY_HEX, scheme["text"]["hex"], scheme["accent"]["hex"]]
+    cfg["filament_type"] = ["PETG"] * 3
+    # Not patched: filament_colour. With three entries (one per AMS slot) the
+    # G-code export fails silently in Bambu Studio 02.08 (bisected 2026-09-14:
+    # every other edit passes, colours alone fail). The template keeps its
+    # single entry; the AMS slot colours are set on the printer and recorded
+    # in the manifest and README. The scheme argument stays in the signature
+    # so a future Bambu release can turn this on without an API change.
     cfg.update(RECOMMENDED)
     ctypes = (XML_HEAD + '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
               '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'

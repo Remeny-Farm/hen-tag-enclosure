@@ -57,8 +57,8 @@ check(ms.count('<metadata key="extruder" value="1"/>') == 2
       and ms.count('<metadata key="extruder" value="3"/>') == 2, "extruders 1/2/3 per cap")
 cfg = json.loads(z.read("Metadata/project_settings.config"))
 check(cfg["wall_loops"] == "3" and cfg["reduce_crossing_wall"] == "1" and cfg["wall_generator"] == "arachne"
-      and cfg["filament_colour"] == ["#F4F4F0", "#101010", "#F4F4F0"]
-      and cfg["printable_area"][2] == "256x256", "settings, colours and plate area")
+      and cfg["filament_type"] == ["PETG", "PETG", "PETG"] and len(cfg["filament_colour"]) == 1
+      and cfg["printable_area"][2] == "256x256", "settings, filament type and plate area")
 h1 = hashlib.sha256(out.read_bytes()).hexdigest()
 write_plate(out, caps, scheme, "test-batch")
 check(hashlib.sha256(out.read_bytes()).hexdigest() == h1, "byte-identical on rerun", h1[:12])
