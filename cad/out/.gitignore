@@ -27,3 +27,10 @@ slice/
 # Preview/proof scratch renders.
 proof_*.svg
 preview_test.svg
+test_plate.3mf
+slice_test/
+plates/
+plates_test/
+cache/
+proof/
+full_plate.json
