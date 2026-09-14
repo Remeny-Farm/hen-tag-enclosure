@@ -324,6 +324,7 @@ export function CapEditor({ henId, client, catalog, layout, copy, walletCopy, lo
             label={copy.centreLabel}
             name={`${henId}-centre`}
             groups={centreGroups}
+            arrows={{ prev: copy.railPrev, next: copy.railNext }}
             value={centreValue(design)}
             onChange={(v) =>
               void change(
@@ -341,6 +342,7 @@ export function CapEditor({ henId, client, catalog, layout, copy, walletCopy, lo
             label={copy.bandLabel}
             name={`${henId}-band`}
             groups={bandGroups}
+            arrows={{ prev: copy.railPrev, next: copy.railNext }}
             value={design.band}
             onChange={(band) => void change({ band })}
             disabled={!editable}

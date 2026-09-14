@@ -20,6 +20,8 @@ export const en = {
     colourRoles: { base: 'Base colour', a: 'Colour A', b: 'Colour B', clear: 'Clear' },
     steps: { palette: 'Palette', motif: 'Motif', colours: 'Colours' },
     stepsLabel: 'Design steps',
+    railPrev: 'Previous options',
+    railNext: 'More options',
     hints: {
       palette: 'Pick the three filaments your cap is printed from. Everything else is yours to arrange.',
       motif: 'One symbol or pattern in the middle, one pattern on the top arc. The number is always on the cap.',

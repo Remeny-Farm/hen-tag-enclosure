@@ -430,6 +430,73 @@
 
 .rc-cap-rail::-webkit-scrollbar { display: none; }
 
+/* Paging arrows and edge fades: shown only while the rail overflows that way. */
+.rc-cap-rail-wrap {
+  position: relative;
+  min-inline-size: 0;
+}
+
+.rc-cap-rail-wrap::before,
+.rc-cap-rail-wrap::after {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  inline-size: var(--rc-space-xxl);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--rc-transition-fast) ease;
+}
+
+.rc-cap-rail-wrap::before {
+  inset-inline-start: 0;
+  background: linear-gradient(to right, var(--rc-paper), transparent);
+}
+
+.rc-cap-rail-wrap::after {
+  inset-inline-end: 0;
+  background: linear-gradient(to left, var(--rc-paper), transparent);
+}
+
+.rc-cap-rail-wrap[data-can-left='true']::before,
+.rc-cap-rail-wrap[data-can-right='true']::after {
+  opacity: 1;
+}
+
+.rc-cap-rail-arrow {
+  position: absolute;
+  inset-block: 0;
+  margin-block: auto;
+  inline-size: var(--rc-tap);
+  block-size: var(--rc-tap);
+  padding: 0;
+  border-radius: var(--rc-radius-pill);
+  border: var(--rc-border-thin) solid color-mix(in srgb, var(--rc-wood) 40%, transparent);
+  background: color-mix(in srgb, var(--rc-paper) 94%, transparent);
+  box-shadow: var(--rc-rest-shadow);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  z-index: 1; /* design-tokens-allow: stacking order over the rail, no z-index token */
+}
+
+.rc-cap-rail-arrow::before {
+  content: '';
+  inline-size: var(--rc-space-sm);
+  block-size: var(--rc-space-sm);
+  border-inline-end: var(--rc-border-frame) solid var(--rc-ink);
+  border-block-end: var(--rc-border-frame) solid var(--rc-ink);
+  transform: translateX(calc(-1 * var(--rc-space-xs) / 2)) rotate(-45deg);
+}
+
+.rc-cap-rail-arrow--prev { inset-inline-start: var(--rc-space-xs); }
+.rc-cap-rail-arrow--prev::before { transform: translateX(calc(var(--rc-space-xs) / 2)) rotate(135deg); }
+.rc-cap-rail-arrow--next { inset-inline-end: var(--rc-space-xs); }
+
+.rc-cap-rail-arrow:focus-visible {
+  outline: var(--rc-focus-size) solid var(--rc-pasture-strong);
+  outline-offset: var(--rc-space-xs);
+}
+
 /* `position: relative` keeps the visually hidden radio (absolute) inside
    the tile; without it the input's containing block is the page and the
    off-screen inputs stretch the document sideways. */

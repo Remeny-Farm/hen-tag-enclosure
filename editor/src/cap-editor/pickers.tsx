@@ -1,4 +1,4 @@
-import type { FocusEvent, ReactNode } from 'react';
+import { useEffect, useRef, useState, type FocusEvent, type ReactNode } from 'react';
 
 import type { ColourRole } from './types.js';
 
@@ -83,6 +83,8 @@ type RailProps<T extends string | null> = {
   value: T;
   onChange: (id: T) => void;
   disabled?: boolean;
+  // Accessible names of the paging arrows shown while the rail overflows.
+  arrows: { prev: string; next: string };
 };
 
 function Glyph({ d, reach }: { d: string; reach: number }) {
@@ -114,9 +116,72 @@ function revealTile(event: FocusEvent<HTMLInputElement>) {
   tile.scrollIntoView({ block: 'nearest', inline: hidden ? 'start' : 'nearest' });
 }
 
+// One rail with its paging arrows. The arrows only show while there is
+// more in that direction (scroll and resize keep them honest), page by
+// almost a viewport, and are ordinary buttons for keyboard and screen
+// readers; on touch the rail still swipes. A fade on the same edge says
+// "more" even before the arrow is noticed.
+function Rail<T extends string | null>({ name, tiles, value, onChange, arrows }: {
+  name: string; tiles: RailTile<T>[]; value: T; onChange: (id: T) => void; arrows: { prev: string; next: string };
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [can, setCan] = useState({ left: false, right: false });
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const update = () =>
+      setCan({ left: el.scrollLeft > 1, right: el.scrollLeft + el.clientWidth < el.scrollWidth - 1 });
+    update();
+    el.addEventListener('scroll', update, { passive: true });
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(update) : null;
+    ro?.observe(el);
+    return () => {
+      el.removeEventListener('scroll', update);
+      ro?.disconnect();
+    };
+  }, [tiles.length]);
+
+  function page(direction: -1 | 1) {
+    const el = ref.current;
+    if (!el) return;
+    const by = direction * Math.max(el.clientWidth - 48, 120); // design-tokens-allow: scroll distance in CSS px, not a visual value
+    if (typeof el.scrollBy === 'function') el.scrollBy({ left: by, behavior: 'smooth' });
+    else el.scrollLeft += by;
+  }
+
+  return (
+    <div className="rc-cap-rail-wrap" data-can-left={can.left ? 'true' : undefined} data-can-right={can.right ? 'true' : undefined}>
+      <button type="button" className="rc-cap-rail-arrow rc-cap-rail-arrow--prev rc-cap-press" aria-label={arrows.prev} onClick={() => page(-1)} hidden={!can.left} />
+      <div ref={ref} className="rc-cap-rail">
+        {tiles.map((t) => {
+          const checked = t.id === value;
+          return (
+            <label key={String(t.id)} className="rc-cap-tile rc-cap-press" data-checked={checked ? 'true' : undefined}>
+              <input
+                type="radio"
+                name={name}
+                className="rc-cap-sr-only"
+                checked={checked}
+                onChange={() => onChange(t.id)}
+                onFocus={revealTile}
+                aria-label={t.title}
+              />
+              {t.glyph ? <Glyph d={t.glyph.d} reach={t.glyph.reach} /> : <span className="rc-cap-tile__none" aria-hidden="true" />}
+              <span className="rc-cap-tile__title">{t.title}</span>
+              {t.badge ? <span className="rc-cap-tile__badge">{t.badge}</span> : null}
+            </label>
+          );
+        })}
+      </div>
+      <button type="button" className="rc-cap-rail-arrow rc-cap-rail-arrow--next rc-cap-press" aria-label={arrows.next} onClick={() => page(1)} hidden={!can.right} />
+    </div>
+  );
+}
+
 // One radio group across several horizontally snapping rails, one rail per
 // pack: the 26 icons stay browsable with a thumb and never become a wall.
-export function PackRail<T extends string | null>({ label, name, groups, value, onChange, disabled }: RailProps<T>) {
+export function PackRail<T extends string | null>({ label, name, groups, value, onChange, disabled, arrows }: RailProps<T>) {
   return (
     <fieldset className="rc-cap-fieldset" disabled={disabled}>
       <legend className="rc-cap-sr-only">{label}</legend>
@@ -128,27 +193,7 @@ export function PackRail<T extends string | null>({ label, name, groups, value, 
               {g.note ? <span className="rc-cap-rail-group__note">{g.note}</span> : null}
               {g.limited ? <span className="rc-cap-rail-group__limited">{g.limited}</span> : null}
             </header>
-            <div className="rc-cap-rail">
-              {g.tiles.map((t) => {
-                const checked = t.id === value;
-                return (
-                  <label key={String(t.id)} className="rc-cap-tile rc-cap-press" data-checked={checked ? 'true' : undefined}>
-                    <input
-                      type="radio"
-                      name={name}
-                      className="rc-cap-sr-only"
-                      checked={checked}
-                      onChange={() => onChange(t.id)}
-                      onFocus={revealTile}
-                      aria-label={t.title}
-                    />
-                    {t.glyph ? <Glyph d={t.glyph.d} reach={t.glyph.reach} /> : <span className="rc-cap-tile__none" aria-hidden="true" />}
-                    <span className="rc-cap-tile__title">{t.title}</span>
-                    {t.badge ? <span className="rc-cap-tile__badge">{t.badge}</span> : null}
-                  </label>
-                );
-              })}
-            </div>
+            <Rail name={name} tiles={g.tiles} value={value} onChange={onChange} arrows={arrows} />
           </section>
         ))}
       </div>

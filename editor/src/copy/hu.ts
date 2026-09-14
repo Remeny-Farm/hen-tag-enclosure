@@ -19,6 +19,8 @@ export const hu = {
     colourRoles: { base: 'Alapszín', a: 'A szín', b: 'B szín', clear: 'Átlátszó' },
     steps: { palette: 'Paletta', motif: 'Motívum', colours: 'Színek' },
     stepsLabel: 'Tervezési lépések',
+    railPrev: 'Előző lehetőségek',
+    railNext: 'További lehetőségek',
     hints: {
       palette: 'Válaszd ki a három filamentet, amiből a kupak készül. A többit te rendezed el.',
       motif: 'Egy szimbólum vagy minta középre, egy minta a felső ívre. A sorszám mindig rajta van.',

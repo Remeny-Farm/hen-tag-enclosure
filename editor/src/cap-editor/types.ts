@@ -76,6 +76,9 @@ export type CapEditorCopy = {
   // --- UI-only copy for the guided flow (game feel, explanations) ---
   steps: { palette: string; motif: string; colours: string };
   stepsLabel: string;
+  // Accessible names of the rail paging arrows.
+  railPrev: string;
+  railNext: string;
   hints: {
     palette: string;
     motif: string;
