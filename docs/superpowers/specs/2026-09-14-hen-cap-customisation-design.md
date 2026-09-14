@@ -30,15 +30,18 @@ physical replacement for a larger fee.
 | How a batch reaches the Mac | **Admin downloads a batch JSON; the CLI consumes it.** The CLI never talks to the API. |
 | Preview | **Live SVG in the app**, drawn from a layout export of the generator. The authoritative CAD render (proof) is produced with the batch and uploaded by staff. |
 | After lock | Patron may re-edit for Golden Grain while the design is not yet batched. After installation a replacement can be requested for a larger fee (someone has to catch the hen in the evening and swap the cap). |
-| Pattern zones | Two independent choices: **centre** (icon *or* pattern inside the accent ring) and **top band** (none / stripes / dots / thin arc). |
+| Pattern zones | Two independent choices: **centre** (icon *or* pattern inside the inner disc) and **top band**. Packs: *basic* (free), *vibe* (30 grain), *drop* (80 grain, limited) — 26 icons, 3 centre and 13 band patterns as of 2026-09-14. |
+| Colours | A scheme is a fixed **base** filament (the whole cap) plus two free colours **a** and **b**; the fourth AMS slot is always Clear for the LED window. The patron assigns base / a / b to each of five zones of the top plate (outer ring, number, inner disc, centre element, band pattern). Rules: number ≠ ring, centre ≠ disc, band ≠ ring. Only the top plate (7 layers) changes colour. |
 | Editor | Built **here** as a drop-in component using `@chirpcoop/real-chicken-ui` and `@chirpcoop/design-tokens`, testable in a browser from this repo; merged into chirp only on instruction. Web patron surface first (`apps/web/(patron)`); the mobile runtime reuses the same component library, so it can adopt it later. |
 
 ## 3. Physical and printability constraints (facts the design is built on)
 
-- The cap shell is always **clear PETG** so the LED reads through it. A colour
-  scheme is therefore a pair: **text colour** (AMS slot 2, the number, icon,
-  centre pattern) and **accent colour** (AMS slot 3, the core ring and the band
-  pattern). Slot 1 is clear. A 4-slot AMS holds **one scheme per plate**.
+- The cap shell is the scheme's **base filament**; a **clear annulus
+  r 8.5–11.5 through the whole top plate** is the LED window (AMS slot 2).
+  Slots 1 / 3 / 4 are base / a / b. A 4-slot AMS holds **one scheme per
+  plate**; a design only decides which of the three a zone gets.
+- The number sits entirely outside the window: Verdana **4.5 pt** (3.4 mm
+  digits, 3.8 mm with the 0.18 mm dilation) in the band r 11.6–15.4.
 - Plate: Bambu Lab P1S, 256 × 256 mm, front-left exclusion 18 × 28 mm.
   Grid **6 × 6 = 36 caps** at 36 mm pitch, origin (20, 8) mm — clear of the
   exclusion zone. Hex packing would reach ~42; not done in v1.
@@ -46,17 +49,18 @@ physical replacement for a larger fee.
   a full plate costs the same number of filament changes as one cap.
   Estimated ~10 min per cap, a full plate is an overnight print.
   **Estimate; the plate is sliced by `slice_check.py` before the first print.**
-- Serial numbers: 1–5 digits (`real_chickens.serial`), Verdana 6.0 pt on the
-  bottom arc. Font is fixed; the patron does not choose it.
+- Serial numbers: 1–5 digits (`real_chickens.serial`) on the bottom arc. Font
+  and size are fixed; the patron does not choose them.
 - Inlays: 0.64 mm deep, flush with the outer face, minimum printable feature
   0.58 mm (0.8 mm for patterns, with ≥ 0.8 mm gaps). Every inlay island is
   one connected solid.
 - LED ring r 8.5–11.5 mm: the number already covers part of it; patterns must
   leave **≥ 60 %** of the ring's area clear (generator check). Centre patterns
   live inside r ≤ 8.6, band patterns in r 11.5–15.4 unless sparse.
-- Icons and patterns are **parametric code**, not fonts or uploads. Adding
-  one is a sketch function plus tests in this repository. A set of ~12 is the
-  realistic v1 size.
+- Icons and patterns are **parametric code** (`cad/cap_motifs.py`), not fonts
+  or uploads; `cad/check_motifs.py` proves every one printable (erosion and
+  dilation tests, extents). Adding one is a sketch function plus a catalog
+  entry.
 - Determinism: identical inputs give byte-identical files. A locked design is
   fully described by its inputs plus the generator version.
 
@@ -113,8 +117,8 @@ raw-design-value hook does not apply.
 - `icon` and `centre` are mutually exclusive; both `null` means a plain
   accent disc. `band` may be `null`.
 - `design_hash` = first 16 hex chars of SHA-256 over the canonical JSON
-  `{"band":"stripes","centre":null,"icon":"heart","scheme":"classic","serial":67,"v":1}`
-  (sorted keys, no whitespace). It covers the design only, not the
+  `{"band":"stripes","centre":null,"colours":{"band":"b","centre":"a","disc":"b","number":"a","ring":"base"},"icon":"heart","scheme":"pasture","serial":67,"v":2}`
+  (sorted keys, no whitespace); every cap in a batch carries its `colours`. It covers the design only, not the
   generator version, so a generator release does not invalidate locked
   designs. Both sides compute it; the CLI refuses a cap whose hash does not
   match its fields.

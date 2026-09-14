@@ -39,8 +39,9 @@ def cube(s: float, z0: float = 0.0):
 
 scheme = {"id": "classic", "text": {"hex": "#101010"}, "accent": {"hex": "#F4F4F0"}}
 caps = [{"name": f"cap_{n}", "position": pos,
-         "bodies": {"shell": cube(10.0), "marking": cube(4.0, 10.0), "core": cube(2.0, 14.0)}}
+         "bodies": {"shell": cube(10.0), "window": cube(4.0, 10.0), "a": cube(2.0, 14.0), "b": cube(1.5, 16.0)}}
         for n, pos in zip((1, 2), grid_positions(2))]
+caps[1]["bodies"].pop("b")     # a design that leaves colour b unused
 out = HERE / "out" / "test_plate.3mf"
 write_plate(out, caps, scheme, "test-batch")
 z = zipfile.ZipFile(out)
@@ -54,11 +55,12 @@ check(model.count("<item ") == 2 and 'transform="1 0 0 0 1 0 0 0 1 38 38 0"' in 
 ms = z.read("Metadata/model_settings.config").decode()
 check(ms.count('<metadata key="extruder" value="1"/>') == 2
       and ms.count('<metadata key="extruder" value="2"/>') == 2
-      and ms.count('<metadata key="extruder" value="3"/>') == 2, "extruders 1/2/3 per cap")
+      and ms.count('<metadata key="extruder" value="3"/>') == 2
+      and ms.count('<metadata key="extruder" value="4"/>') == 1, "extruders 1/2/3/4 per body, b optional")
 cfg = json.loads(z.read("Metadata/project_settings.config"))
 check(cfg["wall_loops"] == "3" and cfg["reduce_crossing_wall"] == "1" and cfg["wall_generator"] == "arachne"
-      and len(cfg["filament_type"]) == 1 and len(cfg["filament_colour"]) == 1
-      and cfg["printable_area"][2] == "256x256", "settings and plate area; filament arrays untouched")
+      and len(cfg["filament_settings_id"]) == 4
+      and cfg["printable_area"][2] == "256x256", "settings, four filaments, plate area")
 h1 = hashlib.sha256(out.read_bytes()).hexdigest()
 write_plate(out, caps, scheme, "test-batch")
 check(hashlib.sha256(out.read_bytes()).hexdigest() == h1, "byte-identical on rerun", h1[:12])

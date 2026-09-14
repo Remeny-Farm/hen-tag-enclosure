@@ -1,5 +1,15 @@
 import { designHash } from './design-hash.js';
-import type { CapDesign, CapDesignClient, CapDraft, Catalog, ClientError, ClientErrorCode, WalletView } from './types.js';
+import {
+  lockPrice,
+  validateDraft,
+  type CapDesign,
+  type CapDesignClient,
+  type CapDraft,
+  type Catalog,
+  type ClientError,
+  type ClientErrorCode,
+  type WalletView,
+} from './types.js';
 
 const err = (code: ClientErrorCode): ClientError => ({ code });
 
@@ -11,9 +21,10 @@ export type MockClient = CapDesignClient & {
 // In-memory CapDesignClient with the full state machine and a Golden Grain
 // wallet, so the editor can be exercised in a browser and in tests without
 // the chirp backend. Every rule here is a requirement for the real endpoints
-// (spec §8): server-priced, validated against the catalog, fees from it.
+// (spec §8): server-priced (scheme + icon + centre + band), validated
+// against the catalog including the zone colour rules, fees from it.
 export function createMockClient(seed: { hens: CapDesign[]; balance: bigint; catalog: Catalog }): MockClient {
-  const hens = seed.hens.map((h) => ({ ...h }));
+  const hens = seed.hens.map((h) => ({ ...h, colours: { ...h.colours } }));
   let balance = seed.balance;
   const cat = seed.catalog;
 
@@ -22,43 +33,38 @@ export function createMockClient(seed: { hens: CapDesign[]; balance: bigint; cat
     if (!h) throw err('NOT_EDITABLE');
     return h;
   };
-  const price = (scheme: string): bigint => BigInt(cat.schemes.find((s) => s.id === scheme)?.price_grain ?? 0);
   const charge = (amount: bigint): void => {
     if (balance < amount) throw err('INSUFFICIENT_GRAIN');
     balance -= amount;
   };
-  const valid = (d: CapDraft): boolean =>
-    cat.schemes.some((s) => s.id === d.scheme)
-    && (d.icon === null || cat.icons.some((i) => i.id === d.icon))
-    && (d.centre === null || cat.centre_patterns.some((p) => p.id === d.centre))
-    && (d.band === null || cat.band_patterns.some((p) => p.id === d.band))
-    && !(d.icon !== null && d.centre !== null);
+  const toDraft = (h: CapDesign): CapDraft => ({ scheme: h.scheme, icon: h.icon, centre: h.centre, band: h.band, colours: h.colours });
 
   return {
     async load(henId) {
-      return { ...find(henId) };
+      const h = find(henId);
+      return { ...h, colours: { ...h.colours } };
     },
     async save(henId, draft) {
       const h = find(henId);
       if (h.status !== 'draft') throw err('NOT_EDITABLE');
-      if (!valid(draft)) throw err('CATALOG_MISMATCH');
-      Object.assign(h, draft, { designHash: await designHash({ ...draft, serial: h.serial }) });
-      return { ...h };
+      if (validateDraft(cat, draft).length > 0) throw err('CATALOG_MISMATCH');
+      Object.assign(h, draft, { colours: { ...draft.colours }, designHash: await designHash({ ...draft, serial: h.serial }) });
+      return { ...h, colours: { ...h.colours } };
     },
     async lock(henId) {
       const h = find(henId);
       if (h.status !== 'draft') throw err('NOT_EDITABLE');
-      if (!valid(h)) throw err('CATALOG_MISMATCH');
-      charge(price(h.scheme));
+      if (validateDraft(cat, toDraft(h)).length > 0) throw err('CATALOG_MISMATCH');
+      charge(lockPrice(cat, h));
       Object.assign(h, { status: 'locked', designHash: await designHash(h) });
-      return { ...h };
+      return { ...h, colours: { ...h.colours } };
     },
     async unlockForEdit(henId) {
       const h = find(henId);
       if (h.status !== 'locked') throw err(h.status === 'draft' ? 'NOT_EDITABLE' : 'DESIGN_BATCHED');
       charge(BigInt(cat.fees.reedit_grain));
       h.status = 'draft';
-      return { ...h };
+      return { ...h, colours: { ...h.colours } };
     },
     async requestReplacement(henId) {
       const h = find(henId);
@@ -66,7 +72,7 @@ export function createMockClient(seed: { hens: CapDesign[]; balance: bigint; cat
       charge(BigInt(cat.fees.replacement_grain));
       h.status = 'draft';
       h.proofUrl = null;
-      return { ...h };
+      return { ...h, colours: { ...h.colours } };
     },
     async getWallet(): Promise<WalletView> {
       return { balance };

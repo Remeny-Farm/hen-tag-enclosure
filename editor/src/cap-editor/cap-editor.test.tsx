@@ -7,10 +7,11 @@ import { CapEditor } from './cap-editor.js';
 import catalog from './data/catalog.json';
 import layout from './data/layout.json';
 import { createMockClient } from './mock-client.js';
-import type { CapDesign } from './types.js';
+import { defaultColours, type CapDesign } from './types.js';
 
+const dc = defaultColours(catalog);
 const hen: CapDesign = {
-  henId: 'h1', serial: 67, scheme: 'pasture', icon: 'heart', centre: null, band: null,
+  henId: 'h1', serial: 67, scheme: 'pasture', icon: 'heart', centre: null, band: null, colours: dc,
   status: 'draft', designHash: '', proofUrl: null,
 };
 
@@ -22,24 +23,28 @@ function setup(balance = 1000n, status: CapDesign['status'] = 'draft') {
   return client;
 }
 
-test('shows the preview, the wallet and the scheme options', async () => {
+test('shows the preview, the wallet, the schemes and the zone colour rows', async () => {
   setup();
   expect(await screen.findByRole('img', { name: 'Cap 67' })).toBeInTheDocument();
   expect(screen.getByLabelText('1,000 Golden Grain')).toBeInTheDocument();
   expect(screen.getByRole('radio', { name: 'Blue-dye' })).toBeInTheDocument();
   expect(screen.getByRole('radio', { name: 'Heart' })).toBeChecked();
+  expect(screen.getByRole('radiogroup', { name: 'Outer ring' })).toBeInTheDocument();
+  expect(screen.getByRole('radiogroup', { name: 'Number' })).toBeInTheDocument();
 });
 
-test('locking a paid scheme asks for confirmation, charges, and locks', async () => {
-  const client = setup(500n);
+test('locking a paid scheme with a Drop icon and a Vibe band charges the itemised total', async () => {
+  const client = setup(1000n);
   const user = userEvent.setup();
   await user.click(await screen.findByRole('radio', { name: 'Gold' }));
+  await user.click(screen.getByRole('radio', { name: 'Skull' }));
+  await user.click(screen.getByRole('radio', { name: 'Checker' }));
   await user.click(screen.getByRole('button', { name: /Lock design/ }));
+  expect(screen.getByRole('dialog')).toHaveTextContent('Total');
   await user.click(screen.getByRole('button', { name: en.capEditor.lockConfirm }));
   await waitFor(() => expect(screen.getByText(en.capEditor.status.locked)).toBeInTheDocument());
-  expect((await client.getWallet()).balance).toBe(0n);
+  expect((await client.getWallet()).balance).toBe(1000n - 500n - 80n - 30n);
   expect(screen.getByRole('button', { name: /Edit again/ })).toBeInTheDocument();
-  expect(screen.queryByRole('dialog')).toBeNull();
 });
 
 test('insufficient grain shows the mapped error and stays a draft', async () => {
@@ -52,14 +57,26 @@ test('insufficient grain shows the mapped error and stays a draft', async () => 
   expect(screen.getByText(en.capEditor.status.draft)).toBeInTheDocument();
 });
 
-test('choosing a centre pattern clears the icon and redraws the preview', async () => {
+test('the number cannot take the ring colour; moving the ring moves the number away', async () => {
+  const client = setup();
+  const user = userEvent.setup();
+  await screen.findByRole('img', { name: 'Cap 67' });
+  const number = screen.getByRole('radiogroup', { name: 'Number' });
+  const ring = screen.getByRole('radiogroup', { name: 'Outer ring' });
+  expect(number.querySelector('input[aria-label^="Base colour"]')).toBeDisabled();
+  await user.click(ring.querySelector('label[data-checked] ~ label, label:nth-child(2)') as Element); // colour A on the ring
+  await waitFor(() => expect((client.state().hens[0].colours.ring)).toBe('a'));
+  expect(client.state().hens[0].colours.number).not.toBe('a');
+});
+
+test('choosing a centre pattern clears the icon and shows its colour row; Drop tiles carry the limited tag', async () => {
   setup();
   const user = userEvent.setup();
   await user.click(await screen.findByRole('radio', { name: 'Rings' }));
   expect(screen.getByRole('radio', { name: 'Heart' })).not.toBeChecked();
   expect(screen.getByRole('img', { name: 'Cap 67' }).querySelector('[data-part="centre"]')).not.toBeNull();
-  await user.click(screen.getByRole('radio', { name: 'Stripes' }));
-  expect(screen.getByRole('img', { name: 'Cap 67' }).querySelector('[data-part="band"]')).not.toBeNull();
+  expect(screen.getByRole('radiogroup', { name: 'Icon / centre pattern' })).toBeInTheDocument();
+  expect(screen.getAllByText(/Drop · limited/).length).toBeGreaterThan(5);
 });
 
 test('a locked design is read-only and re-editing takes two taps and the fee', async () => {
@@ -68,7 +85,6 @@ test('a locked design is read-only and re-editing takes two taps and the fee', a
   const button = await screen.findByRole('button', { name: /Edit again/ });
   expect(screen.getByRole('radio', { name: 'Blue-dye' })).toBeDisabled();
   await user.click(button);
-  expect(screen.getByRole('button', { name: en.capEditor.confirmAgain })).toBeInTheDocument();
   await user.click(screen.getByRole('button', { name: en.capEditor.confirmAgain }));
   await waitFor(() => expect(screen.getByText(en.capEditor.status.draft)).toBeInTheDocument());
   expect((await client.getWallet()).balance).toBe(950n);

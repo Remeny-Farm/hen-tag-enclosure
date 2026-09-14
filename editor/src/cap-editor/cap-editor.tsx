@@ -5,16 +5,23 @@ import { GoldenGrainPill, type GoldenGrainPillCopy } from '@chirpcoop/real-chick
 
 import { CapPreview } from './cap-preview.js';
 import { LockDialog } from './lock-dialog.js';
-import { OptionGroup, type PickerOption } from './pickers.js';
+import { ColourToggle, OptionGroup, type ColourChoice, type PickerOption } from './pickers.js';
 import {
+  COLOUR_ROLES,
+  findEntry,
   isClientError,
+  lockPrice,
+  pairedZone,
   type CapDesign,
   type CapDesignClient,
   type CapDraft,
   type CapEditorCopy,
   type Catalog,
+  type CatalogEntry,
   type ClientErrorCode,
+  type ColourRole,
   type Layout,
+  type ZoneId,
 } from './types.js';
 
 export type CapEditorProps = {
@@ -29,15 +36,16 @@ export type CapEditorProps = {
 
 type Lang = 'hu' | 'en';
 const langOf = (locale: string): Lang => (locale.toLowerCase().startsWith('hu') ? 'hu' : 'en');
-const toDraft = (d: CapDesign): CapDraft => ({ scheme: d.scheme, icon: d.icon, centre: d.centre, band: d.band });
+const toDraft = (d: CapDesign): CapDraft => ({ scheme: d.scheme, icon: d.icon, centre: d.centre, band: d.band, colours: d.colours });
 // The centre group mixes icons and patterns in one radio group; ids are
 // prefixed so the two catalogs cannot collide (both have "dots").
 const centreValue = (d: Pick<CapDesign, 'icon' | 'centre'>): string | null =>
   d.centre ? `centre:${d.centre}` : d.icon ? `icon:${d.icon}` : null;
 
-// The patron's cap editor: pickers on the left, live preview and the one
-// action the current status allows on the right. No data fetching of its
-// own beyond the client it is handed; no string literals (copy in props).
+// The patron's cap editor: pickers and per-zone colour swatches on one side,
+// the live preview and the one action the current status allows on the
+// other. No data fetching of its own beyond the client it is handed; no
+// string literals (copy in props); prices and rules from the catalog.
 export function CapEditor({ henId, client, catalog, layout, copy, walletCopy, locale }: CapEditorProps) {
   const [design, setDesign] = useState<CapDesign | null>(null);
   const [balance, setBalance] = useState<bigint | null>(null);
@@ -68,7 +76,6 @@ export function CapEditor({ henId, client, catalog, layout, copy, walletCopy, lo
     () => catalog.schemes.find((s) => s.id === design?.scheme) ?? catalog.schemes[0],
     [catalog, design?.scheme],
   );
-  const price = BigInt(scheme.price_grain);
   const editable = design?.status === 'draft';
 
   async function refreshWallet(): Promise<void> {
@@ -80,7 +87,7 @@ export function CapEditor({ henId, client, catalog, layout, copy, walletCopy, lo
   async function change(patch: Partial<CapDraft>): Promise<void> {
     if (!design || !editable) return;
     const before = design;
-    const next = { ...design, ...patch };
+    const next = { ...design, ...patch, colours: { ...design.colours, ...(patch.colours ?? {}) } };
     setDesign(next);
     setError(null);
     const mine = ++saveSeq.current;
@@ -95,39 +102,50 @@ export function CapEditor({ henId, client, catalog, layout, copy, walletCopy, lo
     }
   }
 
-  async function act(fn: () => Promise<CapDesign>): Promise<void> {
-    setBusy(true);
-    setError(null);
-    try {
-      setDesign(await fn());
-      await refreshWallet();
-    } catch (e) {
-      setError(codeOf(e));
-    } finally {
-      setBusy(false);
-      setDialogOpen(false);
+  // Zone colour with the visibility rule kept: when the paired zone takes
+  // this zone's colour, this zone moves to the next free one.
+  function setColour(zone: ZoneId, role: ColourRole): void {
+    if (!design) return;
+    const colours = { ...design.colours, [zone]: role };
+    for (const z of ['number', 'centre', 'band'] as ZoneId[]) {
+      const other = pairedZone(catalog, z);
+      if (other && colours[z] === colours[other]) {
+        colours[z] = COLOUR_ROLES.find((r) => r !== colours[other]) ?? colours[z];
+      }
     }
+    void change({ colours });
   }
+
+  const priceOf = (e: CatalogEntry | null): bigint => BigInt(e?.price_grain ?? 0);
+  const tagOf = (e: CatalogEntry): string | undefined => {
+    if (!e.pack || e.pack === 'basic') return undefined;
+    const pack = catalog.packs.find((p) => p.id === e.pack);
+    const name = pack?.name[lang] ?? e.pack;
+    return e.limited ? `${name} · ${copy.limited}` : name;
+  };
+  const badgeOf = (e: CatalogEntry): ReactNode => (e.price_grain === 0 ? null : <Price amount={priceOf(e)} locale={locale} />);
 
   const schemeOptions: PickerOption<string>[] = catalog.schemes.map((s) => ({
     id: s.id,
     title: s.name[lang],
-    swatch: [s.base.hex, s.text.hex, s.accent.hex],
+    swatch: [s.base.hex, s.a.hex, s.b.hex],
     badge: s.price_grain === 0 ? copy.free : <Price amount={BigInt(s.price_grain)} locale={locale} />,
   }));
-  const centreReach = layout.core_r;
-  const bandReach = layout.band.r_max;
   const centreOptions: PickerOption<string | null>[] = [
     { id: null, title: copy.noneOption },
     ...catalog.icons.map((i) => ({
       id: `icon:${i.id}`,
       title: i.name[lang],
-      glyph: { d: layout.icons[i.id as keyof typeof layout.icons], reach: centreReach },
+      glyph: { d: layout.icons[i.id as keyof typeof layout.icons], reach: layout.core_r },
+      badge: badgeOf(i),
+      tag: tagOf(i),
     })),
     ...catalog.centre_patterns.map((p) => ({
       id: `centre:${p.id}`,
       title: p.name[lang],
-      glyph: { d: layout.centre_patterns[p.id as keyof typeof layout.centre_patterns], reach: centreReach },
+      glyph: { d: layout.centre_patterns[p.id as keyof typeof layout.centre_patterns], reach: layout.core_r },
+      badge: badgeOf(p),
+      tag: tagOf(p),
     })),
   ];
   const bandOptions: PickerOption<string | null>[] = [
@@ -135,8 +153,18 @@ export function CapEditor({ henId, client, catalog, layout, copy, walletCopy, lo
     ...catalog.band_patterns.map((p) => ({
       id: p.id,
       title: p.name[lang],
-      glyph: { d: layout.band_patterns[p.id as keyof typeof layout.band_patterns], reach: bandReach },
+      glyph: {
+        d: p.id === 'barcode' ? layout.band_patterns.stripes : layout.band_patterns[p.id as keyof typeof layout.band_patterns],
+        reach: layout.band.r_max,
+      },
+      badge: badgeOf(p),
+      tag: tagOf(p),
     })),
+  ];
+  const colourChoices: ColourChoice[] = [
+    { role: 'base', hex: scheme.base.hex, title: `${copy.colourRoles.base}: ${scheme.base.filament}` },
+    { role: 'a', hex: scheme.a.hex, title: `${copy.colourRoles.a}: ${scheme.a.filament}` },
+    { role: 'b', hex: scheme.b.hex, title: `${copy.colourRoles.b}: ${scheme.b.filament}` },
   ];
 
   if (!design) {
@@ -150,6 +178,27 @@ export function CapEditor({ henId, client, catalog, layout, copy, walletCopy, lo
   const title = copy.previewTitleTemplate.replace('{serial}', String(design.serial));
   const reeditFee = BigInt(catalog.fees.reedit_grain);
   const replacementFee = BigInt(catalog.fees.replacement_grain);
+  const total = lockPrice(catalog, design);
+  const decor = findEntry(catalog.icons, design.icon) ?? findEntry(catalog.centre_patterns, design.centre);
+  const bandEntry = findEntry(catalog.band_patterns, design.band);
+  const lines = [
+    { label: `${copy.schemeLabel}: ${scheme.name[lang]}`, amount: BigInt(scheme.price_grain) },
+    ...(decor ? [{ label: `${copy.centreLabel}: ${decor.name[lang]}`, amount: priceOf(decor) }] : []),
+    ...(bandEntry ? [{ label: `${copy.bandLabel}: ${bandEntry.name[lang]}`, amount: priceOf(bandEntry) }] : []),
+  ];
+  const zoneName = (z: ZoneId) => (catalog.zones as Record<string, { name: { hu: string; en: string } }>)[z].name[lang];
+  const colourRow = (zone: ZoneId) => (
+    <ColourToggle
+      key={zone}
+      label={zoneName(zone)}
+      name={`${henId}-colour-${zone}`}
+      choices={colourChoices}
+      value={design.colours[zone]}
+      blocked={pairedZone(catalog, zone) ? design.colours[pairedZone(catalog, zone) as ZoneId] : null}
+      onChange={(role) => setColour(zone, role)}
+      disabled={!editable}
+    />
+  );
 
   return (
     <div className="rc-cap-editor">
@@ -172,6 +221,12 @@ export function CapEditor({ henId, client, catalog, layout, copy, walletCopy, lo
           onChange={(scheme) => void change({ scheme })}
           disabled={!editable}
         />
+        <div className="rc-cap-colours" aria-label={copy.coloursLabel}>
+          <span className="rc-kicker">{copy.coloursLabel}</span>
+          {colourRow('ring')}
+          {colourRow('number')}
+          {colourRow('disc')}
+        </div>
         <OptionGroup
           label={copy.centreLabel}
           name={`${henId}-centre`}
@@ -187,6 +242,7 @@ export function CapEditor({ henId, client, catalog, layout, copy, walletCopy, lo
             )}
           disabled={!editable}
         />
+        {design.icon || design.centre ? <div className="rc-cap-colours">{colourRow('centre')}</div> : null}
         <OptionGroup
           label={copy.bandLabel}
           name={`${henId}-band`}
@@ -195,13 +251,14 @@ export function CapEditor({ henId, client, catalog, layout, copy, walletCopy, lo
           onChange={(band) => void change({ band })}
           disabled={!editable}
         />
+        {design.band ? <div className="rc-cap-colours">{colourRow('band')}</div> : null}
 
         <div className="rc-cap-actions">
           {balance !== null ? <GoldenGrainPill balance={balance} copy={walletCopy} locale={locale} /> : null}
           {design.status === 'draft' ? (
             <button type="button" className="rc-cap-btn rc-cap-btn--primary" onClick={() => setDialogOpen(true)} disabled={busy}>
               {copy.lock}
-              {price > 0n ? <span className="rc-cap-btn__price"><Price amount={price} locale={locale} /></span> : null}
+              {total > 0n ? <span className="rc-cap-btn__price"><Price amount={total} locale={locale} /></span> : null}
             </button>
           ) : null}
           {design.status === 'locked' ? (
@@ -235,7 +292,8 @@ export function CapEditor({ henId, client, catalog, layout, copy, walletCopy, lo
           copy={copy}
           walletCopy={walletCopy}
           locale={locale}
-          price={price}
+          lines={lines}
+          total={total}
           balance={balance ?? 0n}
           busy={busy}
           onCancel={() => setDialogOpen(false)}
@@ -244,6 +302,20 @@ export function CapEditor({ henId, client, catalog, layout, copy, walletCopy, lo
       ) : null}
     </div>
   );
+
+  async function act(fn: () => Promise<CapDesign>): Promise<void> {
+    setBusy(true);
+    setError(null);
+    try {
+      setDesign(await fn());
+      await refreshWallet();
+    } catch (e) {
+      setError(codeOf(e));
+    } finally {
+      setBusy(false);
+      setDialogOpen(false);
+    }
+  }
 }
 
 function Price({ amount, locale }: { amount: bigint; locale: string }): ReactNode {

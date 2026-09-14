@@ -57,8 +57,12 @@ uv run --python 3.12 cap_batch.py fixtures/batch_sample.json       # batch JSON 
 cd ../editor && pnpm install && pnpm dev                            # the patron editor prototype
 ```
 
-- [`cad/catalog.json`](cad/catalog.json) is the source of truth for schemes,
-  icons, patterns and fees; the app ships an identical copy.
+- [`cad/catalog.json`](cad/catalog.json) is the source of truth for the three
+  Prusament schemes (base + two free colours, Clear window), the packs (basic
+  free, vibe 30, drop 80 limited), 26 icons, 16 patterns, the five colour
+  zones and the fees; the app ships an identical copy.
+  [`cad/cap_motifs.py`](cad/cap_motifs.py) holds every motif as parametric
+  geometry, [`cad/check_motifs.py`](cad/check_motifs.py) proves them printable.
 - [`cad/cap_batch.py`](cad/cap_batch.py) turns the admin's batch JSON into
   `plate_<batch>_P1S.3mf` (6 × 6, up to 36 caps, AMS 1 clear / 2 text /
   3 accent, print settings baked in), a manifest and a proof SVG per cap.

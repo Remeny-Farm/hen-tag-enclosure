@@ -51,7 +51,7 @@ check(plate.exists() and manifest.exists(), "plate and manifest written")
 rows = manifest.read_text().splitlines() if manifest.exists() else []
 check(rows[:1] == ["position,serial,hen_name,design_hash"] and len(rows) == 4
       and rows[1].startswith("1A,67,") and rows[3].startswith("3A,3,"), "manifest rows", str(rows[:2]))
-check((OUT / "proof" / "0ea9d1eb0b0e95b6.svg").exists() and (OUT / "proof" / "01f204914851bec3.svg").exists(),
+check((OUT / "proof" / "515bd1ffc394d597.svg").exists() and (OUT / "proof" / "927d42e14a23ab3e.svg").exists(),
       "proofs named by design hash")
 h1 = hashlib.sha256(plate.read_bytes()).hexdigest() if plate.exists() else ""
 r2 = run(FIX)
@@ -65,6 +65,8 @@ cases = [
     ("duplicate serial", lambda b: b["caps"][1].update(serial=67), "duplicate serial"),
     ("version mismatch", lambda b: b.update(generator_version="v9"), "generator_version"),
     ("icon and centre", lambda b: b["caps"][0].update(centre="rings"), "mutually exclusive"),
+    ("number same colour as ring", lambda b: b["caps"][0]["colours"].update(number="base"), "must differ"),
+    ("colours missing", lambda b: b["caps"][1].pop("colours"), "colours missing"),
     ("unknown scheme", lambda b: b.update(scheme="nope"), "unknown scheme"),
     ("too many caps", lambda b: b["caps"].extend(
         [dict(b["caps"][2], serial=100 + i, design_hash="x") for i in range(40)]), "1..36"),

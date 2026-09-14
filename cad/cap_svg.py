@@ -23,6 +23,7 @@ import build123d as bd
 
 sys.path.insert(0, str(Path(__file__).parent))
 import cap_marking as cm  # noqa: E402
+import cap_motifs as motifs  # noqa: E402
 from cap_design import load_catalog  # noqa: E402
 from hen_tag_enclosure import P  # noqa: E402
 
@@ -82,38 +83,44 @@ def write_layout(path: Path) -> dict:
         # The clear LED window of a base-coloured shell (spec §3, palettes
         # 2026-09-14); the number band overlaps it, which is intended.
         "window": {"r_min": cm.LED_RING[0], "r_max": cm.LED_RING[1]},
+        # The barcode band is generated per serial on both sides; this
+        # sample lets the app's test prove its generator matches (bars as
+        # [start_deg, width_deg]).
+        "barcode_sample": {"serial": 67, "bars": [list(b) for b in motifs.barcode_bars(67)]},
         "number": {"font_pt": cm.NUM_FONT, "centre_deg": 270.0,
                    "base_r": round((cm.BAND_R_MIN + cm.BAND_R_MAX) / 2, 3),
                    "stroke": round(2 * cm.GLYPH_FATTEN, 3),
                    "digits": digit_outlines()},
         "icons": {k: sketch_to_path(f()) for k, f in cm.ICONS.items() if f is not None},
         "centre_patterns": {k: sketch_to_path(f()) for k, f in cm.PATTERNS_CENTRE.items()},
-        "band_patterns": {k: sketch_to_path(f()) for k, f in cm.PATTERNS_BAND.items()},
+        # band paths for serial 0; the barcode is per serial and drawn by the app
+        "band_patterns": {k: sketch_to_path(f(0)) for k, f in cm.PATTERNS_BAND.items() if k != "barcode"},
     }
     layout["number"]["advance"] = max(v["advance"] for v in layout["number"]["digits"].values())
     path.write_text(json.dumps(layout, indent=1, sort_keys=True) + "\n")
     return layout
 
 
-def write_proof(path: Path, mk: bd.Sketch, core: bd.Sketch, scheme: dict) -> None:
+def write_proof(path: Path, sketches: dict, scheme: dict, colours: dict) -> None:
     """Top view of one cap in its scheme's filament colours, from the exact
-    2D sketches: the authoritative preview a patron sees after the batch."""
+    2D sketches and the design's zone colours: the authoritative preview a
+    patron sees after the batch."""
     r = P.r_cap_out + 0.5
-    text_hex, accent_hex = scheme["text"]["hex"], scheme["accent"]["hex"]
-    # Base-coloured shell with the clear LED window drawn as the board seen
-    # through it; a scheme without a base colour is the old all-clear shell.
-    base_hex = scheme.get("base", {}).get("hex", "#e9eef2")
+    hex_of = {"base": scheme["base"]["hex"], "a": scheme["a"]["hex"], "b": scheme["b"]["hex"]}
     lo, hi = cm.LED_RING
-    window = (f'<path d="M {hi} 0 A {hi} {hi} 0 1 0 {-hi} 0 A {hi} {hi} 0 1 0 {hi} 0 Z '
-              f'M {lo} 0 A {lo} {lo} 0 1 0 {-lo} 0 A {lo} {lo} 0 1 0 {lo} 0 Z" '
-              f'fill="#4a4f55" fill-rule="evenodd" opacity="0.85"/>') if "base" in scheme else ""
+    ring = f"M {r:.2f} 0 A {r:.2f} {r:.2f} 0 1 0 {-r:.2f} 0 A {r:.2f} {r:.2f} 0 1 0 {r:.2f} 0 Z"
+    def circ(rr): return f"M {rr} 0 A {rr} {rr} 0 1 0 {-rr} 0 A {rr} {rr} 0 1 0 {rr} 0 Z"
+    layers = [
+        f'<circle r="{P.r_cap_out:.2f}" fill="{hex_of[colours["ring"]]}" stroke="#b7c0c8" stroke-width="0.2"/>',
+        f'<path d="{circ(hi)} {circ(lo)}" fill="#1f2830" fill-rule="evenodd" opacity="0.85"/>',
+        f'<path d="{circ(cm.CORE_R_OUT)}" fill="{hex_of[colours["disc"]]}"/>',
+    ]
+    for key, zone in (("band", "band"), ("centre", "centre"), ("marking", "number")):
+        sk = sketches.get(key)
+        if sk is not None:
+            layers.append(f'<path d="{sketch_to_path(sk)}" fill="{hex_of[colours[zone]]}" fill-rule="evenodd"/>')
     svg = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{-r} {-r} {2 * r} {2 * r}" '
-           f'width="256" height="256"><g transform="scale(1,-1)">'
-           f'<circle r="{P.r_cap_out:.2f}" fill="{base_hex}" stroke="#b7c0c8" stroke-width="0.2"/>'
-           f'{window}'
-           f'<path d="{sketch_to_path(core)}" fill="{accent_hex}" fill-rule="evenodd"/>'
-           f'<path d="{sketch_to_path(mk)}" fill="{text_hex}" fill-rule="evenodd"/>'
-           f'</g></svg>\n')
+           f'width="256" height="256"><g transform="scale(1,-1)">' + "".join(layers) + '</g></svg>\n')
     path.write_text(svg)
 
 

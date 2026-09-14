@@ -60,20 +60,22 @@ matrix = [
     ("3",     ["--centre", "solid", "--band", "arc"]),
     ("4242",  ["--centre", "dots", "--icon", "none"]),
     ("5",     ["--icon", "egg"]),
-    ("6",     ["--icon", "moon"]),
+    ("6",     ["--icon", "moon", "--colours", "ring=a,number=b,disc=base,centre=a,band=base"]),
+    ("8",     ["--icon", "skull", "--band", "barcode", "--scheme", "gold",
+               "--colours", "ring=a,number=base,disc=b,centre=a,band=b"]),
+    ("9",     ["--icon", "sparkles", "--band", "checker", "--scheme", "bluedye"]),
 ]
 for number, extra in matrix:
     r = run_cli(number, *extra)
     check(all_checks_passed(r), f"generate {number} {' '.join(extra)}",
           "" if all_checks_passed(r) else r.stdout.splitlines()[-1] if r.stdout else r.stderr[-200:])
-    for suffix in ("", "_marking", "_core"):
-        f = OUT / (f"cap_{number}.3mf" if not suffix else f"{suffix[1:]}_{number}.stl")
+    for f in (OUT / f"cap_{number}.3mf", OUT / f"window_{number}.stl"):
         check(f.exists() and f.stat().st_size > 1000, f"  output {f.name}")
 
 print("=== the guaranteed-safe message length is honoured ===")
-r = run_cli("7", "--top", "Szeretlek Bözsi!")
+r = run_cli("7", "--top", "Szeretlek Bözsi nagyon nagyon!")
 check(r.returncode != 0 and "shorten" in (r.stdout + r.stderr),
-      "16-char message rejected for arc length (big-lettering layout)")
+      "30-char message rejected for arc length")
 r = run_cli("7", "--top", "W" * 40)
 check(r.returncode != 0 and "guaranteed-safe length" in (r.stdout + r.stderr),
       "40x'W' rejected with the safe-length hint")
@@ -97,7 +99,10 @@ for label, args, needle in [
     ("unknown icon", ["7", "--icon", "unicorn"], "invalid choice"),
     ("unknown font", ["7", "--font", "comic-sans"], "invalid choice"),
     ("icon and centre together", ["7", "--icon", "star", "--centre", "rings"], "mutually exclusive"),
-    ("unknown band", ["7", "--band", "zigzag"], "invalid choice"),
+    ("unknown band", ["7", "--band", "spiral"], "invalid choice"),
+    ("number same colour as the ring", ["7", "--colours", "number=base"], "must differ"),
+    ("band same colour as the ring", ["7", "--band", "arc", "--colours", "ring=b"], "must differ"),
+    ("bad colour role", ["7", "--colours", "ring=red"], "zone=role"),
 ]:
     r = run_cli(*args)
     blob = r.stdout + r.stderr
@@ -107,10 +112,10 @@ for label, args, needle in [
 print("=== determinism: same input, byte-identical output ===")
 r1 = run_cli("31415", "--top", "Det 314!", "--icon", "flower")
 h1 = {f.name: sha(f) for f in [OUT / "cap_31415.3mf", OUT / "cap_31415.stl",
-                               OUT / "marking_31415.stl", OUT / "core_31415.stl"]}
+                               OUT / "window_31415.stl", OUT / "a_31415.stl", OUT / "b_31415.stl"]}
 r2 = run_cli("31415", "--top", "Det 314!", "--icon", "flower")
 h2 = {f.name: sha(f) for f in [OUT / "cap_31415.3mf", OUT / "cap_31415.stl",
-                               OUT / "marking_31415.stl", OUT / "core_31415.stl"]}
+                               OUT / "window_31415.stl", OUT / "a_31415.stl", OUT / "b_31415.stl"]}
 check(all_checks_passed(r1) and all_checks_passed(r2), "both runs clean")
 for name in h1:
     check(h1[name] == h2[name], f"  {name} byte-identical", h1[name][:12])
@@ -123,46 +128,60 @@ if "--bambu" in sys.argv:
           "cap_88888_P1S.3mf produced with registration verify")
 
 print("=== layout export and proof ===")
+sys.path.insert(0, str(HERE))
+from cap_design import load_catalog as _lc  # noqa: E402
+cat = _lc()
 r = run_cli("67", "--icon", "heart", "--band", "stripes",
             "--layout-json", str(OUT / "layout.json"), "--proof", str(OUT / "proof_67.svg"))
 check(all_checks_passed(r), "generate with layout + proof", "" if all_checks_passed(r) else (r.stdout + r.stderr)[-200:])
 import json as _json
 lay = _json.loads((OUT / "layout.json").read_text())
 check(lay["schema"] == "hen-cap-layout/1" and len(lay["number"]["digits"]) == 10, "layout has 10 digits")
-check(abs(lay["number"]["advance"] - 3.814) < 0.01, "digit advance 3.814", str(lay["number"]["advance"]))
 check(all(v["d"].startswith("M ") for v in lay["number"]["digits"].values()), "digit paths well-formed")
-check(set(lay["icons"]) == {"heart", "star", "flower", "egg", "sun", "moon"}, "layout icons complete")
-check(set(lay["centre_patterns"]) == {"rings", "solid", "dots"} and set(lay["band_patterns"]) == {"stripes", "dots", "arc"},
-      "layout patterns complete")
+check(set(lay["icons"]) == {e["id"] for e in cat["icons"]}, "layout icons complete")
+check(set(lay["centre_patterns"]) == {e["id"] for e in cat["centre_patterns"]}
+      and set(lay["band_patterns"]) == {e["id"] for e in cat["band_patterns"]} - {"barcode"},
+      "layout patterns complete (barcode is per serial)")
+check(lay["barcode_sample"]["serial"] == 67 and len(lay["barcode_sample"]["bars"]) > 10, "barcode sample exported")
+check(abs(lay["number"]["advance"] - 2.861) < 0.01, "digit advance at 4.5 pt", str(lay["number"]["advance"]))
 svg = (OUT / "proof_67.svg").read_text()
-check(svg.count("<path") == 3 and "#111111" in svg and "#F2F2EE" in svg and "#A6C48A" in svg,
-      "proof has base, window, text and accent colours")
+check(svg.count("<path") == 5 and "#111111" in svg and "#F2F2EE" in svg and "#A6C48A" in svg,
+      "proof has window, disc, band, icon and number in the scheme colours")
 
 print("=== catalog parity and design hash ===")
 sys.path.insert(0, str(HERE))
-from cap_design import design_hash, load_catalog, validate_design  # noqa: E402
+from cap_design import default_colours, design_hash, load_catalog, lock_price, validate_design  # noqa: E402
 import cap_marking as cm  # noqa: E402
 cat = load_catalog()
+DC = default_colours(cat)
 check(sorted(e["id"] for e in cat["icons"]) == sorted(k for k in cm.ICONS if k != "none"),
       "catalog icons == generator ICONS")
 check(sorted(e["id"] for e in cat["centre_patterns"]) == sorted(cm.PATTERNS_CENTRE),
       "catalog centre patterns == PATTERNS_CENTRE")
 check(sorted(e["id"] for e in cat["band_patterns"]) == sorted(cm.PATTERNS_BAND),
       "catalog band patterns == PATTERNS_BAND")
-check(design_hash(67, "pasture", "heart", None, "stripes") == "0ea9d1eb0b0e95b6",
+check(design_hash(67, "pasture", "heart", None, "stripes", DC) == "515bd1ffc394d597",
       "design_hash test vector 1")
-check(design_hash(8, "bluedye", None, "rings", None) == "baf8189d7242b555",
+check(design_hash(8, "bluedye", None, "rings", None,
+                  {"ring": "a", "number": "base", "disc": "b", "centre": "a", "band": "b"}) == "d6d6ead0fc97b830",
       "design_hash test vector 2")
 check(validate_design(cat, {"serial": 67, "scheme": "pasture", "icon": "heart",
                             "centre": "rings", "band": None})
       == ["icon and centre pattern are mutually exclusive"], "icon+centre rejected")
+check(validate_design(cat, {"serial": 67, "scheme": "pasture", "icon": "heart", "centre": None, "band": None,
+                            "colours": {**DC, "number": "base"}})
+      == ["zone number must differ in colour from ring"], "number/ring colour rule")
+check(lock_price(cat, {"scheme": "gold", "icon": "skull", "centre": None, "band": "barcode"}) == 660,
+      "lock price sums scheme + icon + band")
+check(all("pack" in e and "price_grain" in e for e in cat["icons"] + cat["band_patterns"]),
+      "every icon and band carries a pack and a price")
 check(validate_design(cat, {"serial": 0, "scheme": "nope", "icon": None, "centre": None,
                             "band": None})[:2]
       == ["serial must be an integer 1..99999", "unknown scheme 'nope'"], "serial/scheme rejected")
 
 # Tidy the per-test artifacts (gitignored anyway, but keep out/ readable).
-for pat in ("*_88888*", "*_31415*", "*_40404*", "*_1.*", "*_1_*", "*_7*", "marking_1.stl",
-            "*_99999*", "*_3.*", "*_3_*", "*_4242*", "*_5.*", "*_5_*", "*_6.*", "*_6_*"):
+for pat in ("*_88888*", "*_31415*", "*_40404*", "*_1.*", "*_1_*", "*_7*", "*_1.stl",
+            "*_99999*", "*_3.*", "*_3_*", "*_4242*", "*_5.*", "*_5_*", "*_6.*", "*_6_*", "*_8.*", "*_8_*", "*_9.*", "*_9_*"):
     for f in OUT.glob(pat):
         f.unlink()
 

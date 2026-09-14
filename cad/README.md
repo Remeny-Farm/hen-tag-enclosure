@@ -116,7 +116,9 @@ copied.
 |---|---|
 | `hen_tag_enclosure.py` | All geometry. `Params` at the top holds every dimension. |
 | `catalog.json` | Schemes, icons, centre/band patterns and fees a patron may choose; the app ships a copy, `test_cap_marking.py` keeps them identical. |
-| `cap_design.py` | Catalog loader, `design_hash`, `validate_design`; no build123d, shared by the batch CLI and the tests. |
+| `cap_design.py` | Catalog loader, `design_hash` (v2, with zone colours), `validate_design`, `lock_price`; no build123d, shared by the batch CLI and the tests. |
+| `cap_motifs.py` | Every icon and pattern as a parametric sketch (26 icons, 3 centre, 13 band patterns; the barcode band is seeded by the serial). |
+| `check_motifs.py` | Printability of the whole motif library (erosion/dilation, extents) plus a contact sheet (`--svg`). |
 | `cap_svg.py` | Sketch → SVG: `out/layout.json` for the app preview, proof SVGs for the batch. |
 | `bambu_project.py` | Pure-Python Bambu Studio plate writer (6 × 6 grid, part extruders, settings template in `bambu/`). |
 | `cap_batch.py` | Batch JSON → plate, manifest, proofs; caches bodies per design hash; runs `slice_check.py` on the plate. |
@@ -166,8 +168,9 @@ sweep helper so their bearing faces share a pitch.
    `plate_<id>_manifest.csv` (`position,serial,hen_name,design_hash`,
    positions `1A`…`6F`) and `proof/<design_hash>.svg`, then slices the plate
    through Bambu Studio and reports objects, warnings and the time estimate.
-3. Open the plate in Bambu Studio, set AMS 1 = clear PETG, 2 = the scheme's
-   text filament, 3 = its accent filament (`catalog.json` names them), print.
+3. Open the plate in Bambu Studio, set AMS 1 = the scheme's base filament,
+   2 = Prusament PETG Clear, 3 = colour a, 4 = colour b (`catalog.json` names
+   them; the batch CLI prints the mapping), print.
 4. Upload the proofs to the app (file name = design hash).
 
 Patterns must survive a 0.4 mm erosion (feature ≥ 0.8 mm) and a 0.4 mm

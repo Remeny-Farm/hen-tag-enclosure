@@ -73,6 +73,16 @@ a two-cube plate:
 2. The filament colours of a scheme are recorded in `catalog.json`, the
    manifest and the README, not in the project file.
 
+## Addendum, same day: four bodies per cap
+
+The colour model changed to a base-coloured shell with a clear LED window
+and two free colours assigned per zone (spec §2/§3). Each cap is now four
+bodies (shell, window, a, b) on AMS 1–4; the settings template was
+re-exported from Bambu Studio with four filaments loaded. The 3-cap fixture
+plate slices to 3 objects in **21 m 10 s** (≈ 7 min per cap, consistent with
+the 36-cap estimate above); no warnings. Every motif in `cad/cap_motifs.py`
+(26 icons, 16 patterns) passes `check_motifs.py`. Still UNVERIFIED in print.
+
 ## Open Questions & Verification Items
 
 1. **Print one plate.** Confirm in Bambu Studio that the three parts of one

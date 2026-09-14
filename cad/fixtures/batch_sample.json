@@ -5,11 +5,50 @@
   "generator_version": "dev",
   "created_at": "2026-09-14T18:00:00Z",
   "caps": [
-    {"serial": 67, "icon": "heart", "centre": null, "band": "stripes",
-     "design_hash": "0ea9d1eb0b0e95b6", "hen_name": "Bözsi"},
-    {"serial": 12345, "icon": "star", "centre": null, "band": "dots",
-     "design_hash": "b8f357cf9a577818", "hen_name": "Piroska"},
-    {"serial": 3, "icon": null, "centre": "solid", "band": "arc",
-     "design_hash": "01f204914851bec3", "hen_name": "Kata"}
+    {
+      "serial": 67,
+      "icon": "heart",
+      "centre": null,
+      "band": "stripes",
+      "design_hash": "515bd1ffc394d597",
+      "hen_name": "Bözsi",
+      "colours": {
+        "ring": "base",
+        "number": "a",
+        "disc": "b",
+        "centre": "a",
+        "band": "b"
+      }
+    },
+    {
+      "serial": 12345,
+      "icon": "star",
+      "centre": null,
+      "band": "dots",
+      "design_hash": "105418783fca8aac",
+      "hen_name": "Piroska",
+      "colours": {
+        "ring": "a",
+        "number": "base",
+        "disc": "b",
+        "centre": "a",
+        "band": "b"
+      }
+    },
+    {
+      "serial": 3,
+      "icon": null,
+      "centre": "solid",
+      "band": "arc",
+      "design_hash": "927d42e14a23ab3e",
+      "hen_name": "Kata",
+      "colours": {
+        "ring": "base",
+        "number": "a",
+        "disc": "b",
+        "centre": "a",
+        "band": "b"
+      }
+    }
   ]
 }

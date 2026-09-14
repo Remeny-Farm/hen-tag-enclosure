@@ -39,7 +39,10 @@ MODEL_NS = ('xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02" '
             'xmlns:BambuStudio="http://schemas.bambulab.com/package/2021" '
             'xmlns:p="http://schemas.microsoft.com/3dmanufacturing/production/2015/06" '
             'requiredextensions="p"')
-BODY_EXTRUDER = {"shell": 1, "marking": 2, "core": 3}   # AMS slots
+# AMS slots: 1 base colour (the shell), 2 clear (the LED window), 3 and 4 the
+# scheme's two free colours; a cap without a colour simply omits that body.
+BODY_EXTRUDER = {"shell": 1, "window": 2, "a": 3, "b": 4}
+BODIES = tuple(BODY_EXTRUDER)
 # Bambu Studio decides whether a package is its own project from this
 # metadata. Anything else is loaded as a "3mf from other vendor": project
 # settings are ignored, the plate defaults to 200 x 200 and every cap beyond
@@ -86,7 +89,8 @@ def _mesh_xml(oid: int, name: str, verts, tris) -> str:
 
 
 def write_plate(path: Path, caps: list[dict], scheme: dict, batch_id: str) -> None:
-    """caps: [{"name", "position": (x, y), "bodies": {"shell"|"marking"|"core": (verts, tris)}}]
+    """caps: [{"name", "position": (x, y), "bodies": {"shell"|"window"|"a"|"b": (verts, tris)}}]
+    (a and b may be absent when a design leaves that colour unused)
     Meshes are in world coordinates: cap bottom at z 0, centred on the xy
     origin, already in print orientation; the build item moves each cap to
     its plate position."""
@@ -95,9 +99,11 @@ def write_plate(path: Path, caps: list[dict], scheme: dict, batch_id: str) -> No
     entries: list[tuple[str, bytes]] = []
     assemblies, items, settings_objects, instances = [], [], [], []
     for k, cap in enumerate(caps):
-        base = 4 * k
+        base = 5 * k
         meshes, comps, parts = [], [], []
-        for bi, body in enumerate(("shell", "marking", "core")):
+        for bi, body in enumerate(BODIES):
+            if body not in cap["bodies"]:
+                continue
             oid = base + 1 + bi
             verts, tris = cap["bodies"][body]
             meshes.append(_mesh_xml(oid, f'{cap["name"]}:{body}', verts, tris))
@@ -111,7 +117,7 @@ def write_plate(path: Path, caps: list[dict], scheme: dict, batch_id: str) -> No
                         (XML_HEAD + f'<model unit="millimeter" xml:lang="en-US" {MODEL_NS}>'
                          '<metadata name="BambuStudio:3mfVersion">1</metadata>'
                          f'<resources>{"".join(meshes)}</resources><build/></model>').encode()))
-        aid = base + 4
+        aid = base + 5
         x, y = cap["position"]
         assemblies.append(f'<object id="{aid}" p:UUID="{_uid("asm", cap["name"])}" type="model">'
                           f'<components>{"".join(comps)}</components></object>')

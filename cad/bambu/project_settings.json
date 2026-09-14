@@ -123,6 +123,7 @@
   "",
   "",
   "",
+  "",
   ""
  ],
  "draft_shield": "disabled",
@@ -201,6 +202,7 @@
  "fan_min_speed": [
   "20",
   "20",
+  "20",
   "20"
  ],
  "farthest_point_timelapse": "1",
@@ -264,12 +266,14 @@
  "filament_end_gcode": [
   " ",
   " ",
+  " ",
   " "
  ],
  "filament_extruder_compatibility": [
   "0"
  ],
  "filament_extruder_variant": [
+  "Direct Drive Standard",
   "Direct Drive Standard",
   "Direct Drive Standard",
   "Direct Drive Standard"
@@ -289,6 +293,7 @@
  "filament_ids": [
   "",
   "",
+  "",
   ""
  ],
  "filament_is_mixed": [
@@ -298,6 +303,7 @@
   "0"
  ],
  "filament_long_retractions_when_cut": [
+  "1",
   "1",
   "1",
   "1"
@@ -310,6 +316,7 @@
  ],
  "filament_map_mode": "Auto For Flush",
  "filament_max_volumetric_speed": [
+  "15",
   "15",
   "15",
   "15"
@@ -378,6 +385,7 @@
  "filament_ramming_travel_time": [
   "0",
   "0",
+  "0",
   "0"
  ],
  "filament_ramming_travel_time_nc": [
@@ -395,9 +403,11 @@
  "filament_retraction_distances_when_cut": [
   "18",
   "18",
+  "18",
   "18"
  ],
  "filament_retraction_length": [
+  "0.4",
   "0.4",
   "0.4",
   "0.4"
@@ -417,9 +427,11 @@
  "filament_self_index": [
   "1",
   "2",
-  "3"
+  "3",
+  "4"
  ],
  "filament_settings_id": [
+  "Bambu PETG Basic @BBL X1C",
   "Bambu PETG Basic @BBL X1C",
   "Bambu PETG Basic @BBL X1C",
   "Bambu PETG Basic @BBL X1C"
@@ -431,6 +443,7 @@
   "0"
  ],
  "filament_start_gcode": [
+  " ",
   " ",
   " ",
   " "
@@ -465,14 +478,17 @@
  "filament_wipe": [
   "1",
   "1",
+  "1",
   "1"
  ],
  "filament_wipe_distance": [
   "1",
   "1",
+  "1",
   "1"
  ],
  "filament_z_hop_types": [
+  "Spiral Lift",
   "Spiral Lift",
   "Spiral Lift",
   "Spiral Lift"
@@ -598,6 +614,7 @@
   "",
   "",
   "",
+  "",
   ""
  ],
  "initial_layer_acceleration": [
@@ -665,6 +682,7 @@
   "0"
  ],
  "long_retractions_when_ec": [
+  "0",
   "0",
   "0",
   "0"
@@ -806,9 +824,11 @@
  "nozzle_temperature": [
   "255",
   "255",
+  "255",
   "255"
  ],
  "nozzle_temperature_initial_layer": [
+  "245",
   "245",
   "245",
   "245"
@@ -865,6 +885,7 @@
  "overhang_fan_speed": [
   "50",
   "50",
+  "50",
   "50"
  ],
  "overhang_fan_threshold": [
@@ -886,6 +907,7 @@
  ],
  "post_process": [],
  "pre_start_fan_time": [
+  "2",
   "2",
   "2",
   "2"
@@ -997,6 +1019,7 @@
   "18"
  ],
  "retraction_distances_when_ec": [
+  "0",
   "0",
   "0",
   "0"

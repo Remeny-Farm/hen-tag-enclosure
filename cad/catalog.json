@@ -1,5 +1,5 @@
 {
-  "schema": "hen-cap-catalog/1",
+  "schema": "hen-cap-catalog/2",
   "generator_version": "dev",
   "window": {
     "filament": "Prusament PETG Clear"
@@ -15,15 +15,15 @@
         "filament": "Prusament PETG Pistachio Green",
         "hex": "#A6C48A"
       },
-      "text": {
+      "price_grain": 0,
+      "a": {
         "filament": "Prusament PETG Jet Black",
         "hex": "#111111"
       },
-      "accent": {
+      "b": {
         "filament": "Prusament PETG Signal White",
         "hex": "#F2F2EE"
-      },
-      "price_grain": 0
+      }
     },
     {
       "id": "bluedye",
@@ -35,15 +35,15 @@
         "filament": "Prusament PETG Ocean Blue",
         "hex": "#1B4B7A"
       },
-      "text": {
+      "price_grain": 100,
+      "a": {
         "filament": "Prusament PETG Signal White",
         "hex": "#F2F2EE"
       },
-      "accent": {
+      "b": {
         "filament": "Prusament PETG Chalky Blue",
         "hex": "#6C93BF"
-      },
-      "price_grain": 100
+      }
     },
     {
       "id": "gold",
@@ -55,15 +55,79 @@
         "filament": "Prusament PETG Galaxy Black",
         "hex": "#1C1B20"
       },
-      "text": {
+      "price_grain": 500,
+      "a": {
         "filament": "Prusament PETG Yellow Gold",
         "hex": "#E2A72E"
       },
-      "accent": {
+      "b": {
         "filament": "Prusament PETG Signal White",
         "hex": "#F2F2EE"
+      }
+    }
+  ],
+  "zones": {
+    "ring": {
+      "name": {
+        "hu": "Külső gyűrű",
+        "en": "Outer ring"
       },
-      "price_grain": 500
+      "default": "base"
+    },
+    "number": {
+      "name": {
+        "hu": "Sorszám",
+        "en": "Number"
+      },
+      "default": "a",
+      "must_differ_from": "ring"
+    },
+    "disc": {
+      "name": {
+        "hu": "Belső korong",
+        "en": "Inner disc"
+      },
+      "default": "b"
+    },
+    "centre": {
+      "name": {
+        "hu": "Ikon / középminta",
+        "en": "Icon / centre pattern"
+      },
+      "default": "a",
+      "must_differ_from": "disc"
+    },
+    "band": {
+      "name": {
+        "hu": "Sávminta",
+        "en": "Band pattern"
+      },
+      "default": "b",
+      "must_differ_from": "ring"
+    }
+  },
+  "packs": [
+    {
+      "id": "basic",
+      "name": {
+        "hu": "Alap",
+        "en": "Basic"
+      }
+    },
+    {
+      "id": "vibe",
+      "name": {
+        "hu": "Vibe",
+        "en": "Vibe"
+      }
+    },
+    {
+      "id": "drop",
+      "name": {
+        "hu": "Drop",
+        "en": "Drop"
+      },
+      "limited": true
     }
   ],
   "icons": [
@@ -72,42 +136,244 @@
       "name": {
         "hu": "Szív",
         "en": "Heart"
-      }
+      },
+      "pack": "basic",
+      "price_grain": 0
     },
     {
       "id": "star",
       "name": {
         "hu": "Csillag",
         "en": "Star"
-      }
+      },
+      "pack": "basic",
+      "price_grain": 0
     },
     {
       "id": "flower",
       "name": {
         "hu": "Virág",
         "en": "Flower"
-      }
+      },
+      "pack": "basic",
+      "price_grain": 0
     },
     {
       "id": "egg",
       "name": {
         "hu": "Tojás",
         "en": "Egg"
-      }
+      },
+      "pack": "basic",
+      "price_grain": 0
     },
     {
       "id": "sun",
       "name": {
         "hu": "Nap",
         "en": "Sun"
-      }
+      },
+      "pack": "basic",
+      "price_grain": 0
     },
     {
       "id": "moon",
       "name": {
         "hu": "Hold",
         "en": "Moon"
-      }
+      },
+      "pack": "basic",
+      "price_grain": 0
+    },
+    {
+      "id": "sparkles",
+      "name": {
+        "hu": "Szikrák",
+        "en": "Sparkles"
+      },
+      "pack": "vibe",
+      "price_grain": 30
+    },
+    {
+      "id": "bolt",
+      "name": {
+        "hu": "Villám",
+        "en": "Bolt"
+      },
+      "pack": "vibe",
+      "price_grain": 30
+    },
+    {
+      "id": "smiley",
+      "name": {
+        "hu": "Smiley",
+        "en": "Smiley"
+      },
+      "pack": "vibe",
+      "price_grain": 30
+    },
+    {
+      "id": "cherry",
+      "name": {
+        "hu": "Cseresznye",
+        "en": "Cherry"
+      },
+      "pack": "vibe",
+      "price_grain": 30
+    },
+    {
+      "id": "butterfly",
+      "name": {
+        "hu": "Lepke",
+        "en": "Butterfly"
+      },
+      "pack": "vibe",
+      "price_grain": 30
+    },
+    {
+      "id": "mushroom",
+      "name": {
+        "hu": "Gomba",
+        "en": "Mushroom"
+      },
+      "pack": "vibe",
+      "price_grain": 30
+    },
+    {
+      "id": "clover",
+      "name": {
+        "hu": "Lóhere",
+        "en": "Clover"
+      },
+      "pack": "vibe",
+      "price_grain": 30
+    },
+    {
+      "id": "rainbow",
+      "name": {
+        "hu": "Szivárvány",
+        "en": "Rainbow"
+      },
+      "pack": "vibe",
+      "price_grain": 30
+    },
+    {
+      "id": "ghost",
+      "name": {
+        "hu": "Szellem",
+        "en": "Ghost"
+      },
+      "pack": "vibe",
+      "price_grain": 30
+    },
+    {
+      "id": "saturn",
+      "name": {
+        "hu": "Szaturnusz",
+        "en": "Saturn"
+      },
+      "pack": "vibe",
+      "price_grain": 30
+    },
+    {
+      "id": "skull",
+      "name": {
+        "hu": "Koponya",
+        "en": "Skull"
+      },
+      "pack": "drop",
+      "price_grain": 80,
+      "limited": true
+    },
+    {
+      "id": "alien",
+      "name": {
+        "hu": "Alien",
+        "en": "Alien"
+      },
+      "pack": "drop",
+      "price_grain": 80,
+      "limited": true
+    },
+    {
+      "id": "diamond",
+      "name": {
+        "hu": "Gyémánt",
+        "en": "Diamond"
+      },
+      "pack": "drop",
+      "price_grain": 80,
+      "limited": true
+    },
+    {
+      "id": "crown",
+      "name": {
+        "hu": "Korona",
+        "en": "Crown"
+      },
+      "pack": "drop",
+      "price_grain": 80,
+      "limited": true
+    },
+    {
+      "id": "yinyang",
+      "name": {
+        "hu": "Jin-jang",
+        "en": "Yin-yang"
+      },
+      "pack": "drop",
+      "price_grain": 80,
+      "limited": true
+    },
+    {
+      "id": "peace",
+      "name": {
+        "hu": "Béke",
+        "en": "Peace"
+      },
+      "pack": "drop",
+      "price_grain": 80,
+      "limited": true
+    },
+    {
+      "id": "drop",
+      "name": {
+        "hu": "Csepp",
+        "en": "Drop"
+      },
+      "pack": "drop",
+      "price_grain": 80,
+      "limited": true
+    },
+    {
+      "id": "broken_heart",
+      "name": {
+        "hu": "Tört szív",
+        "en": "Broken heart"
+      },
+      "pack": "drop",
+      "price_grain": 80,
+      "limited": true
+    },
+    {
+      "id": "eye",
+      "name": {
+        "hu": "Szem",
+        "en": "Eye"
+      },
+      "pack": "drop",
+      "price_grain": 80,
+      "limited": true
+    },
+    {
+      "id": "paw",
+      "name": {
+        "hu": "Mancs",
+        "en": "Paw"
+      },
+      "pack": "drop",
+      "price_grain": 80,
+      "limited": true
     }
   ],
   "centre_patterns": [
@@ -116,21 +382,27 @@
       "name": {
         "hu": "Körök",
         "en": "Rings"
-      }
+      },
+      "pack": "basic",
+      "price_grain": 0
     },
     {
       "id": "solid",
       "name": {
         "hu": "Tele",
         "en": "Solid"
-      }
+      },
+      "pack": "basic",
+      "price_grain": 0
     },
     {
       "id": "dots",
       "name": {
         "hu": "Pöttyök",
         "en": "Dots"
-      }
+      },
+      "pack": "basic",
+      "price_grain": 0
     }
   ],
   "band_patterns": [
@@ -139,21 +411,122 @@
       "name": {
         "hu": "Csíkok",
         "en": "Stripes"
-      }
+      },
+      "pack": "basic",
+      "price_grain": 0
     },
     {
       "id": "dots",
       "name": {
         "hu": "Pöttyök",
         "en": "Dots"
-      }
+      },
+      "pack": "basic",
+      "price_grain": 0
     },
     {
       "id": "arc",
       "name": {
         "hu": "Ív",
         "en": "Arc"
-      }
+      },
+      "pack": "basic",
+      "price_grain": 0
+    },
+    {
+      "id": "checker",
+      "name": {
+        "hu": "Sakktábla",
+        "en": "Checker"
+      },
+      "pack": "vibe",
+      "price_grain": 30
+    },
+    {
+      "id": "zigzag",
+      "name": {
+        "hu": "Cikkcakk",
+        "en": "Zigzag"
+      },
+      "pack": "vibe",
+      "price_grain": 30
+    },
+    {
+      "id": "wave",
+      "name": {
+        "hu": "Hullám",
+        "en": "Wave"
+      },
+      "pack": "vibe",
+      "price_grain": 30
+    },
+    {
+      "id": "dashes",
+      "name": {
+        "hu": "Loading",
+        "en": "Loading"
+      },
+      "pack": "vibe",
+      "price_grain": 30
+    },
+    {
+      "id": "pixel",
+      "name": {
+        "hu": "Pixel",
+        "en": "Pixel"
+      },
+      "pack": "vibe",
+      "price_grain": 30
+    },
+    {
+      "id": "barcode",
+      "name": {
+        "hu": "Vonalkód",
+        "en": "Barcode"
+      },
+      "pack": "drop",
+      "price_grain": 80,
+      "limited": true
+    },
+    {
+      "id": "tally",
+      "name": {
+        "hu": "Rovás",
+        "en": "Tally"
+      },
+      "pack": "drop",
+      "price_grain": 80,
+      "limited": true
+    },
+    {
+      "id": "sparkle_dots",
+      "name": {
+        "hu": "Szikrapöttyök",
+        "en": "Sparkle dots"
+      },
+      "pack": "drop",
+      "price_grain": 80,
+      "limited": true
+    },
+    {
+      "id": "growing_dots",
+      "name": {
+        "hu": "Növő pöttyök",
+        "en": "Growing dots"
+      },
+      "pack": "drop",
+      "price_grain": 80,
+      "limited": true
+    },
+    {
+      "id": "double_arc",
+      "name": {
+        "hu": "Dupla ív",
+        "en": "Double arc"
+      },
+      "pack": "drop",
+      "price_grain": 80,
+      "limited": true
     }
   ],
   "fees": {

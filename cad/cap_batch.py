@@ -51,13 +51,28 @@ def validate_batch(batch: dict, cat: dict) -> list[str]:
     seen = set()
     for i, c in enumerate(caps):
         d = {"serial": c.get("serial"), "scheme": batch.get("scheme"), "icon": c.get("icon"),
-             "centre": c.get("centre"), "band": c.get("band"), "design_hash": c.get("design_hash")}
+             "centre": c.get("centre"), "band": c.get("band"), "design_hash": c.get("design_hash"),
+             "colours": c.get("colours")}
+        if c.get("colours") is None:
+            errs.append(f"cap {i} (serial {c.get('serial')}): colours missing")
+            continue
         for e in validate_design(cat, d):
             errs.append(f"cap {i} (serial {c.get('serial')}): {e}")
         if c.get("serial") in seen:
             errs.append(f"cap {i}: duplicate serial {c.get('serial')}")
         seen.add(c.get("serial"))
     return errs
+
+
+def generator_fingerprint() -> str:
+    """Short hash of the generator sources: the body cache is keyed by it as
+    well as by the design hash, so a generator change never serves stale
+    bodies for an unchanged design."""
+    import hashlib
+    h = hashlib.sha256()
+    for name in ("hen_tag_enclosure.py", "cap_marking.py", "cap_motifs.py", "cap_design.py"):
+        h.update((HERE / name).read_bytes())
+    return h.hexdigest()[:12]
 
 
 def build_bodies(c: dict, cap_solid, cache: Path) -> tuple[dict, dict, bool]:
@@ -69,14 +84,17 @@ def build_bodies(c: dict, cap_solid, cache: Path) -> tuple[dict, dict, bool]:
     import build123d as bd
     from cap_marking import DEPTH_DEFAULT, build, canonical_mesh
     icon = c["icon"] or "none"
-    _, shell, inlay, core_body, mk, core, _, _, _ = build(
-        str(c["serial"]), "", icon, DEPTH_DEFAULT, centre=c["centre"], band=c["band"], cap=cap_solid)
-    dz = -(bd.Rot(180, 0, 0) * shell).bounding_box().min.Z
+    _, solids, sketches, _, _ = build(
+        str(c["serial"]), "", icon, DEPTH_DEFAULT, centre=c["centre"], band=c["band"],
+        cap=cap_solid, colours=c["colours"])
+    dz = -(bd.Rot(180, 0, 0) * solids["shell"]).bounding_box().min.Z
     bodies = {}
-    for name, solid in (("shell", shell), ("marking", inlay), ("core", core_body)):
+    for name, solid in solids.items():
+        if solid is None:
+            continue
         oriented = bd.Pos(0, 0, dz) * (bd.Rot(180, 0, 0) * solid)
         bodies[name] = canonical_mesh(oriented, f"{c['serial']}:{name}")
-    sketches = {"mk": mk, "core": core}
+    sketches = {k: v for k, v in sketches.items()}
     key.mkdir(parents=True, exist_ok=True)
     (key / "bodies.pkl").write_bytes(pickle.dumps(bodies))
     (key / "sketches.pkl").write_bytes(pickle.dumps(sketches))
@@ -102,12 +120,13 @@ def main() -> int:
 
     out = Path(a.out).resolve()
     out.mkdir(parents=True, exist_ok=True)
-    cache = HERE / "out" / "cache"
+    cache = HERE / "out" / "cache" / generator_fingerprint()
     proof_dir = out / "proof"
     proof_dir.mkdir(exist_ok=True)
     scheme = next(s for s in cat["schemes"] if s["id"] == batch["scheme"])
-    print(f"batch {batch['batch_id']}: {len(batch['caps'])} caps, scheme {scheme['id']} "
-          f"(text {scheme['text']['filament']}, accent {scheme['accent']['filament']})")
+    print(f"batch {batch['batch_id']}: {len(batch['caps'])} caps, scheme {scheme['id']}  AMS 1 = "
+          f"{scheme['base']['filament']}, 2 = {cat['window']['filament']}, "
+          f"3 = {scheme['a']['filament']}, 4 = {scheme['b']['filament']}")
 
     from cap_marking import FOAM_INNER
     from cap_svg import write_proof
@@ -120,7 +139,7 @@ def main() -> int:
             cap_solid = build_cap(P, foam=FOAM_INNER)    # one shell for the whole batch
         bodies, sketches, hit = build_bodies(c, cap_solid, cache)
         hits += hit
-        write_proof(proof_dir / f"{c['design_hash']}.svg", sketches["mk"], sketches["core"], scheme)
+        write_proof(proof_dir / f"{c['design_hash']}.svg", sketches, scheme, c["colours"])
         plate_caps.append({"name": f"cap_{c['serial']}", "position": pos, "bodies": bodies})
         rows.append((grid_label(pos), c["serial"], c.get("hen_name", ""), c["design_hash"]))
         print(f"  cap {c['serial']:>5} at {rows[-1][0]}  {'cache' if hit else 'built'}")
