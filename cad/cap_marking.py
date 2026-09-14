@@ -295,16 +295,124 @@ def flower_sketch(r: float = FLOWER_R) -> bd.Sketch:
     return out
 
 
+def egg_sketch(h: float = 12.0) -> bd.Sketch:
+    """Egg: a circle stretched 1.3x along Y, tip up."""
+    return bd.Sketch() + bd.Ellipse(h / 2 / 1.3, h / 2)
+
+
+def sun_sketch(r: float = 6.9) -> bd.Sketch:
+    """Disc plus eight 1.1 mm rays; rays overlap the disc so it is one face."""
+    out = bd.Circle(r * 0.5)
+    for k in range(8):
+        out = out + bd.Rot(0, 0, 45 * k) * bd.Pos(r * 0.62, 0) * bd.Rectangle(r * 0.76, 1.1)
+    return out
+
+
+def moon_sketch(r: float = 6.6) -> bd.Sketch:
+    """Crescent: a disc minus an offset disc, horns to the left."""
+    return bd.Circle(r) - bd.Pos(r * 0.45, 0) * bd.Circle(r * 0.82)
+
+
 # All parametric geometry -- no emoji fonts, so every machine renders the
-# same shape. These are the fixed choices offered to customers.
+# same shape. These are the fixed choices offered to customers; catalog.json
+# lists the same ids and test_cap_marking.py keeps the two in step.
 ICONS = {"heart": heart_sketch, "star": star_sketch, "flower": flower_sketch,
-         "none": None}
+         "egg": egg_sketch, "sun": sun_sketch, "moon": moon_sketch, "none": None}
+
+# --- patterns ---------------------------------------------------------------
+# Centre patterns replace the icon inside the accent disc (text colour);
+# band patterns sit in the lettering band above the number (accent colour).
+# Every element >= 0.8 mm, every gap >= 0.8 mm: printable with a 0.4 nozzle.
+CORE_PATTERN_R_MAX = 7.4     # keeps >= 1.2 mm of accent ring outside
+BAND_PATTERN_R = (12.2, 14.8)
+BAND_WINDOW = (-10.0, 190.0)  # deg; clear of a 5-digit number by 22 deg each side
+PATTERN_FEATURE_MIN = 0.8
+PATTERN_GAP_MIN = 0.8
 
 
-def build_lettering(number: str, top: str, icon: str):
+def rings_sketch() -> bd.Sketch:
+    out = bd.Sketch()
+    for r_in in (1.6, 4.0, 6.4):
+        out = out + (bd.Circle(r_in + 0.9) - bd.Circle(r_in))
+    return out
+
+
+def solid_sketch() -> bd.Sketch:
+    return bd.Sketch() + bd.Circle(7.3)
+
+
+def centre_dots_sketch() -> bd.Sketch:
+    out = bd.Circle(1.0)
+    for k in range(8):
+        a = math.radians(45 * k)
+        out = out + bd.Pos(5.2 * math.cos(a), 5.2 * math.sin(a)) * bd.Circle(0.9)
+    return out
+
+
+def _annular_sector(r_in: float, r_out: float, a0: float, a1: float) -> bd.Sketch:
+    n = max(2, int((a1 - a0) / 5) + 1)
+    pts = [(0.0, 0.0)] + [
+        ((r_out + 2) * math.cos(math.radians(a0 + (a1 - a0) * i / n)),
+         (r_out + 2) * math.sin(math.radians(a0 + (a1 - a0) * i / n)))
+        for i in range(n + 1)]
+    return (bd.Circle(r_out) - bd.Circle(r_in)) & bd.Polygon(*pts, align=None)
+
+
+def stripes_sketch() -> bd.Sketch:
+    r_in, r_out = BAND_PATTERN_R
+    out = bd.Sketch()
+    for a in range(-6, 187, 12):
+        out = out + bd.Rot(0, 0, a) * bd.Pos((r_in + r_out) / 2, 0) * bd.Rectangle(r_out - r_in, 0.9)
+    return out
+
+
+def band_dots_sketch() -> bd.Sketch:
+    out = bd.Sketch()
+    for a in range(-5, 186, 10):
+        out = out + bd.Pos(13.5 * math.cos(math.radians(a)),
+                           13.5 * math.sin(math.radians(a))) * bd.Circle(0.6)
+    return out
+
+
+def arc_sketch() -> bd.Sketch:
+    return _annular_sector(13.05, 13.95, BAND_WINDOW[0], BAND_WINDOW[1])
+
+
+PATTERNS_CENTRE = {"rings": rings_sketch, "solid": solid_sketch, "dots": centre_dots_sketch}
+PATTERNS_BAND = {"stripes": stripes_sketch, "dots": band_dots_sketch, "arc": arc_sketch}
+
+
+def pattern_feature_ok(sk: bd.Sketch) -> bool:
+    """Every island survives an erosion by half of PATTERN_FEATURE_MIN, so its
+    narrowest part is at least that wide. Exact on the simple shapes patterns
+    are made of, where the 2A/P estimator used for glyphs under-reads short
+    bars (a 0.9 x 2.6 mm stripe measures 0.67)."""
+    eroded = bd.offset(sk, amount=-PATTERN_FEATURE_MIN / 2, kind=bd.Kind.INTERSECTION)
+    return len(eroded.faces()) == len(sk.faces())
+
+
+def pattern_gap_ok(sk: bd.Sketch) -> bool:
+    """Islands closer than PATTERN_GAP_MIN merge when each is dilated by half
+    of it, so a changed face count means a gap too narrow to print."""
+    return len(fatten(sk, PATTERN_GAP_MIN / 2).faces()) == len(sk.faces())
+
+
+def led_ring_clear_fraction(*inlays: bd.Sketch) -> float:
+    """Fraction of the LED ring (r 8.5-11.5) not covered by any inlay."""
+    ring = bd.Circle(11.5) - bd.Circle(8.5)
+    covered = 0.0
+    for sk in inlays:
+        hit = ring & sk
+        covered += hit.area if hit is not None else 0.0
+    return 1.0 - covered / ring.area
+
+
+def build_lettering(number: str, top: str, icon: str, centre: str | None = None,
+                    band: str | None = None):
     """Compose the marking: bottom number arc, optional top message arc,
-    optional centre icon. Fixed font sizes; misfits are rejected, never
-    shrunk. Returns (sketch, spans_deg, stroke_raw)."""
+    optional centre icon or centre pattern, optional band pattern. Fixed font
+    sizes; misfits are rejected, never shrunk.
+    Returns (marking sketch, centre element, spans_deg, stroke_raw, band sketch)."""
     bot, stroke_raw = fit_arc_text(number, NUM_FONT, 270.0, upright=False,
                                    r_min=BAND_R_MIN, r_max=BAND_R_MAX)
     mk = bot
@@ -329,26 +437,43 @@ def build_lettering(number: str, top: str, icon: str):
         spans["top"] = span_top
 
     ic = None
-    if ICONS[icon] is not None:
+    if centre is not None:
+        ic = PATTERNS_CENTRE[centre]()
+    elif ICONS[icon] is not None:
         ic = ICONS[icon]()
+    if ic is not None:
         if radial_range(ic)[1] > CORE_R_OUT - 1.2:
-            raise SystemExit(f"icon '{icon}' too large for the accent disc")
+            raise SystemExit("centre element too large for the accent disc")
         mk = mk + ic
-    return mk, ic, spans, stroke_raw
+    band_sk = PATTERNS_BAND[band]() if band is not None else None
+    if band_sk is not None:
+        # Keep the accent-colour band pattern away from the text-colour number:
+        # the window is fixed, so this only trips if BAND_WINDOW is widened.
+        lo_w, hi_w = BAND_WINDOW
+        gap = min((b_lo - hi_w) % 360, (lo_w - b_hi) % 360)
+        if gap < GAP_ARC / 2:
+            raise SystemExit(f"band pattern within {gap:.0f} deg of the number")
+    return mk, ic, spans, stroke_raw, band_sk
 
 
-def build(number: str, top: str, icon: str, depth: float):
+def build(number: str, top: str, icon: str, depth: float, centre: str | None = None,
+          band: str | None = None, cap: bd.Solid | None = None):
     """Three bodies: clear shell, lettering+icon inlay, accent core ring
-    inlay. Both inlays are `depth` deep in the top plate, flush outside."""
+    inlay. Both inlays are `depth` deep in the top plate, flush outside.
+
+    `cap` lets a batch reuse one prebuilt shell for every cap."""
     p = P
     z_top = p.z_ceiling + p.cap_top_t
 
-    mk, ic, spans, stroke_raw = build_lettering(number, top, icon)
+    mk, ic, spans, stroke_raw, band_sk = build_lettering(number, top, icon, centre, band)
     # Accent disc with the icon cut out with its own sketch: the two colours
     # share the boundary exactly, no clear gap between them.
     core = bd.Circle(CORE_R_OUT) - ic if ic is not None else bd.Circle(CORE_R_OUT)
+    if band_sk is not None:
+        core = core + band_sk          # same filament (accent), one body
 
-    cap = build_cap(p, foam=FOAM_INNER)
+    if cap is None:
+        cap = build_cap(p, foam=FOAM_INNER)
 
     # The pocket is cut with the inlay solid itself, so the two are identical
     # by construction.
@@ -358,7 +483,7 @@ def build(number: str, top: str, icon: str, depth: float):
     core_body = bd.Pos(0, 0, z_top - depth) * bd.extrude(core, amount=depth)
     shell = shell - core_body
 
-    return cap, shell, inlay, core_body, mk, core, spans, stroke_raw
+    return cap, shell, inlay, core_body, mk, core, spans, stroke_raw, band_sk
 
 
 def canonical_mesh(solid, name: str) -> tuple[list, list]:
@@ -630,6 +755,10 @@ def main() -> None:
                     help='message bent along the top arc, e.g. "Szeretlek Bözsi!"')
     ap.add_argument("--icon", default="heart", choices=sorted(ICONS),
                     help="centre symbol (default heart)")
+    ap.add_argument("--centre", default=None, choices=sorted(PATTERNS_CENTRE),
+                    help="centre pattern instead of an icon")
+    ap.add_argument("--band", default=None, choices=sorted(PATTERNS_BAND),
+                    help="pattern in the band above the number (accent colour)")
     ap.add_argument("--depth", type=float, default=DEPTH_DEFAULT,
                     help=f"inlay thickness in mm (default {DEPTH_DEFAULT}); must leave "
                          f">= {COVER_MIN} mm of cover")
@@ -651,13 +780,15 @@ def main() -> None:
         raise SystemExit(f"message contains unsupported characters: {bad!r} "
                          f"(allowed: letters incl. Hungarian, digits, "
                          f"space and .,:;!?'\"()+-)")
+    if a.centre is not None and "--icon" in sys.argv and a.icon != "none":
+        raise SystemExit("--centre and --icon are mutually exclusive")
     depth = a.depth
     if not 0.16 <= depth <= P.cap_top_t - COVER_MIN:
         raise SystemExit(f"--depth must be between 0.16 and {P.cap_top_t - COVER_MIN:.2f} mm")
 
     OUT.mkdir(parents=True, exist_ok=True)
-    cap, shell, inlay, core_body, mk, core, spans, stroke_raw = build(
-        number, top, a.icon, depth)
+    cap, shell, inlay, core_body, mk, core, spans, stroke_raw, band_sk = build(
+        number, top, a.icon, depth, centre=a.centre, band=a.band)
 
     # --- machine checks ------------------------------------------------------
     ok = True
@@ -706,6 +837,17 @@ def main() -> None:
           f"shell {vol(shell & core_body):.5f}, marking {vol(inlay & core_body):.5f} mm3")
     check(vol(inlay & core_body) < 1e-3, "icon fills its cut in the disc",
           f"intersection {vol(inlay & core_body):.5f} mm3 -- shared boundary, no gap")
+    ic_sk = PATTERNS_CENTRE[a.centre]() if a.centre else None
+    for label, sk in (("centre pattern", ic_sk), ("band pattern", band_sk)):
+        if sk is None:
+            continue
+        check(pattern_feature_ok(sk), f"{label} feature printable",
+              f"every island survives a {PATTERN_FEATURE_MIN / 2:.1f} mm erosion "
+              f"({len(sk.faces())} islands)")
+        check(pattern_gap_ok(sk), f"{label} gaps printable",
+              f">= {PATTERN_GAP_MIN} mm between islands")
+    clear = led_ring_clear_fraction(mk, core)
+    check(clear >= 0.60, "LED ring stays clear", f"{clear * 100:.0f}% of r 8.5-11.5 open")
     check(True, "LED visibility",
           f"whole shell is clear PETG; LED at r {LED_R:.0f} shines through "
           f"anywhere -- no angular alignment needed")

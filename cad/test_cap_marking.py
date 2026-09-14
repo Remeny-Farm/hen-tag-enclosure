@@ -55,6 +55,12 @@ matrix = [
     ("88888", ["--top", "Bözsi!", "--icon", "heart"]),
     ("1",     ["--top", "Őzikém", "--icon", "star"]),
     ("40404", ["--icon", "flower", "--font", "tahoma"]),
+    ("67",    ["--centre", "rings", "--band", "stripes"]),
+    ("99999", ["--icon", "sun", "--band", "dots"]),
+    ("3",     ["--centre", "solid", "--band", "arc"]),
+    ("4242",  ["--centre", "dots", "--icon", "none"]),
+    ("5",     ["--icon", "egg"]),
+    ("6",     ["--icon", "moon"]),
 ]
 for number, extra in matrix:
     r = run_cli(number, *extra)
@@ -90,6 +96,8 @@ for label, args, needle in [
      "unsupported characters"),
     ("unknown icon", ["7", "--icon", "unicorn"], "invalid choice"),
     ("unknown font", ["7", "--font", "comic-sans"], "invalid choice"),
+    ("icon and centre together", ["7", "--icon", "star", "--centre", "rings"], "mutually exclusive"),
+    ("unknown band", ["7", "--band", "zigzag"], "invalid choice"),
 ]:
     r = run_cli(*args)
     blob = r.stdout + r.stderr
@@ -137,7 +145,8 @@ check(validate_design(cat, {"serial": 0, "scheme": "nope", "icon": None, "centre
       == ["serial must be an integer 1..99999", "unknown scheme 'nope'"], "serial/scheme rejected")
 
 # Tidy the per-test artifacts (gitignored anyway, but keep out/ readable).
-for pat in ("*_88888*", "*_31415*", "*_40404*", "*_1.*", "*_1_*", "*_7*", "marking_1.stl"):
+for pat in ("*_88888*", "*_31415*", "*_40404*", "*_1.*", "*_1_*", "*_7*", "marking_1.stl",
+            "*_99999*", "*_3.*", "*_3_*", "*_4242*", "*_5.*", "*_5_*", "*_6.*", "*_6_*"):
     for f in OUT.glob(pat):
         f.unlink()
 
