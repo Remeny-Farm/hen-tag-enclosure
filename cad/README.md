@@ -115,6 +115,12 @@ copied.
 | File | Role |
 |---|---|
 | `hen_tag_enclosure.py` | All geometry. `Params` at the top holds every dimension. |
+| `catalog.json` | Schemes, icons, centre/band patterns and fees a patron may choose; the app ships a copy, `test_cap_marking.py` keeps them identical. |
+| `cap_design.py` | Catalog loader, `design_hash`, `validate_design`; no build123d, shared by the batch CLI and the tests. |
+| `cap_svg.py` | Sketch → SVG: `out/layout.json` for the app preview, proof SVGs for the batch. |
+| `bambu_project.py` | Pure-Python Bambu Studio plate writer (6 × 6 grid, part extruders, settings template in `bambu/`). |
+| `cap_batch.py` | Batch JSON → plate, manifest, proofs; caches bodies per design hash; runs `slice_check.py` on the plate. |
+| `test_bambu_project.py`, `test_cap_batch.py` | Writer and batch suites (structure, determinism, refusals, a real slice). |
 | `verify.py` | Interference, fit, bayonet, wall thickness, seal and harness checks. |
 | `slice_check.py` | Real-slicer check: warnings and open-air travel counts per part; `--project` writes the ready-to-print Bambu project. Needs Bambu Studio. |
 | `out/hen_tag_revC_P1S.3mf` | Bambu Studio project: body, cap and both coupons on one P1S plate, print settings baked in. |
@@ -147,6 +153,28 @@ the cap, not at the bird. `cell_fill()` builds the crescent that retains the
 holder; `strap_tabs()` builds the in-plane side tabs; `body_lugs()` and
 `cap_channels()` build the two halves of the bayonet, both from one helical
 sweep helper so their bearing faces share a pitch.
+
+### Batch workflow
+
+1. The app's admin page downloads a `hen-cap-batch/1` JSON: one scheme, up to
+   36 locked caps (serial, icon *or* centre pattern, band pattern, design
+   hash, hen name). `fixtures/batch_sample.json` is the shape.
+2. `uv run --python 3.12 cap_batch.py <batch.json>` refuses the whole batch on
+   any problem (schema, `generator_version` ≠ `catalog.json`, unknown ids,
+   icon + centre together, duplicate serial, bad hash, > 36 caps) and lists
+   every offending cap; otherwise it writes `out/plates/plate_<id>_P1S.3mf`,
+   `plate_<id>_manifest.csv` (`position,serial,hen_name,design_hash`,
+   positions `1A`…`6F`) and `proof/<design_hash>.svg`, then slices the plate
+   through Bambu Studio and reports objects, warnings and the time estimate.
+3. Open the plate in Bambu Studio, set AMS 1 = clear PETG, 2 = the scheme's
+   text filament, 3 = its accent filament (`catalog.json` names them), print.
+4. Upload the proofs to the app (file name = design hash).
+
+Patterns must survive a 0.4 mm erosion (feature ≥ 0.8 mm) and a 0.4 mm
+dilation without islands merging (gap ≥ 0.8 mm), and every inlay together must
+leave ≥ 60 % of the LED ring (r 8.5–11.5) clear; `cap_marking.py` checks all
+three. Band patterns live in a fixed window (−10°…190°) that clears a 5-digit
+serial by 22°.
 
 After any change, re-run `verify.py` before printing. It is what caught the
 assembly-path defect described in `../DESIGN.md`.

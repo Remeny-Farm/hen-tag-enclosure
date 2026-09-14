@@ -1,7 +1,7 @@
 # Hen Cap Customisation — Design
 
 - **Date**: 2026-09-14
-- **Status**: planned (approved in conversation; nothing below is built yet)
+- **Status**: in progress — the generator side (§6) and the editor prototype (§7) are built on branch `feat/cap-customisation`; the chirp side (§8) is not
 - **Scope of this repository**: the generator changes, the batch CLI, the
   catalog manifest, the preview layout export, and a browser-testable
   prototype of the patron editor built with chirp's own UI library. The chirp
@@ -82,7 +82,8 @@ One catalog, two copies kept identical by a test:
   ],
   "icons": [{"id": "heart", "name": {"hu": "Szív", "en": "Heart"}}],
   "centre_patterns": [{"id": "rings", "name": {"hu": "Körök", "en": "Rings"}}],
-  "band_patterns": [{"id": "stripes", "name": {"hu": "Csíkok", "en": "Stripes"}}]
+  "band_patterns": [{"id": "stripes", "name": {"hu": "Csíkok", "en": "Stripes"}}],
+  "fees": {"reedit_grain": 50, "replacement_grain": 500}
 }
 ```
 
@@ -124,7 +125,12 @@ raw-design-value hook does not apply.
 - Outputs, all named by the batch id and design hash so they can be matched
   back without a database:
   `plate_<batch_id>_P1S.3mf`, `plate_<batch_id>_manifest.csv`
-  (position, serial, hen name, design hash), `proof/<design_hash>.svg`.
+  (position `1A`…`6F` = column number + row letter, serial, hen name, design
+  hash), `proof/<design_hash>.svg`.
+- The plate file does not carry the scheme's filament colours: Bambu Studio
+  02.08 rejects a three-entry `filament_colour` on export (lab note
+  2026-09-14). The AMS mapping 1 clear / 2 text / 3 accent is set on the
+  printer from the catalog's filament names.
 
 ## 6. Generator side (this repository)
 

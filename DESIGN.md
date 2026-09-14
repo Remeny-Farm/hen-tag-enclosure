@@ -224,6 +224,17 @@ is inside the ID.
 
 `--no-window` reproduces the earlier two-body transparent cap.
 
+### 10. Per-hen customisation: patterns, catalog, batch plates
+
+Patrons choose a colour scheme (text + accent filament over the clear shell),
+an icon *or* a centre pattern, and a top-band pattern; the serial number is
+always on the cap. Everything a patron may choose is in `cad/catalog.json`,
+mirrored in the app. Locked designs are batched one scheme per plate, 6 × 6
+on the P1S, by `cad/cap_batch.py`; a 36-cap plate slices to 36 objects in an
+estimated 4 h 13 m (`docs/lab/2026-09-14-cap-batch-plate.md`, **no plate
+printed yet**). Design, constraints and the chirp-side requirements:
+`docs/superpowers/specs/2026-09-14-hen-cap-customisation-design.md`.
+
 ### 9. Bayonet, not a thread
 
 Revisions A/B closed with a Tr28.6 × 1.0 trapezoidal thread. One pair printed
