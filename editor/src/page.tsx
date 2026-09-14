@@ -28,7 +28,7 @@ export function Page() {
   const copy = lang === 'hu' ? hu : en;
   const locale = lang === 'hu' ? 'hu-HU' : 'en-US';
   return (
-    <RealChickenShell copy={asShellCopy(copy.shell)}>
+    <RealChickenShell copy={asShellCopy(copy.shell)} showHero={false}>
       <div className="rc-cap-demo-bar">
         <div className="rc-cap-demo-bar__group" role="group" aria-label="hen">
           {HENS.map((h) => (

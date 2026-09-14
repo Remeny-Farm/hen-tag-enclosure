@@ -19,6 +19,12 @@ pnpm build
 `CHIRP_DIR` overrides the chirp checkout location (default `../../chirp`);
 `tsconfig.json`'s `paths` must be edited to match, tsc cannot read env.
 
+## What it looks like
+
+A three-step game — Palette → Motif → Colours — with the cap on stage and a
+summary bar stuck to the bottom. Design decisions, the mobile integration
+path and a reviewer checklist: [`DESIGN-NOTES.md`](DESIGN-NOTES.md).
+
 ## Rules the code already obeys
 
 - Only `var(--rc-*)` and `@chirpcoop/design-tokens` values in TS/CSS; the

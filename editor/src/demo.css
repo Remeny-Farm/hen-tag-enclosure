@@ -16,3 +16,11 @@
   background: var(--rc-pasture-strong);
   color: var(--rc-page);
 }
+
+/* The shell clips horizontal overflow with `hidden`, which turns it into a
+   scroll container and defeats every sticky element inside (stage, bar).
+   `clip` keeps the clipping without the scroll container. In chirp this is
+   the one-line change on `.rc-shell` (or on the cap page's wrapper). */
+.rc-shell {
+  overflow-x: clip;
+}

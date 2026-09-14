@@ -73,6 +73,28 @@ export type CapEditorCopy = {
   colourRoles: Record<ColourRole, string>;
   status: Record<CapStatus, string>;
   errors: Record<ClientErrorCode, string>;
+  // --- UI-only copy for the guided flow (game feel, explanations) ---
+  steps: { palette: string; motif: string; colours: string };
+  stepsLabel: string;
+  hints: {
+    palette: string;
+    motif: string;
+    packs: string;
+    colours: string;
+    window: string;
+    numberRule: string;
+    lock: string;
+    readOnly: string;
+    motifColour: string;
+  };
+  schemeBlurbs: Record<string, string>;
+  packBlurbs: Record<string, string>;
+  perItemTemplate: string; // "{amount}"
+  autoFixTemplate: string; // "{zone}"
+  celebrate: string;
+  summaryLabel: string;
+  loading: string;
+  continueLabel: string;
 };
 
 export function isClientError(e: unknown): e is ClientError {

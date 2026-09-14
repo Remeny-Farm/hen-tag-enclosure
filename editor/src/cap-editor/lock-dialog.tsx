@@ -60,8 +60,10 @@ export function LockDialog({ copy, walletCopy, locale, lines, total, balance, bu
         aria-describedby={descId}
         onKeyDown={handleKeyDown}
       >
+        <span className="rc-cap-dialog__grip" aria-hidden="true" />
         <h2 className="rc-cap-dialog__title" id={titleId}>{copy.lockTitle}</h2>
         <p className="rc-cap-dialog__desc" id={descId}>{copy.lockBody}</p>
+        <p className="rc-cap-hint rc-cap-hint--quiet">{copy.hints.lock}</p>
         <dl className="rc-cap-dialog__facts">
           {lines.map((l) => (
             <div key={l.label} className="rc-cap-dialog__fact">
@@ -79,10 +81,10 @@ export function LockDialog({ copy, walletCopy, locale, lines, total, balance, bu
           </div>
         </dl>
         <div className="rc-cap-dialog__actions">
-          <button type="button" className="rc-cap-btn rc-cap-btn--ghost" onClick={onCancel} disabled={busy}>
+          <button type="button" className="rc-cap-btn rc-cap-btn--ghost rc-cap-press" onClick={onCancel} disabled={busy}>
             {copy.cancel}
           </button>
-          <button ref={confirmRef} type="button" className="rc-cap-btn rc-cap-btn--primary" onClick={onConfirm} disabled={busy}>
+          <button ref={confirmRef} type="button" className="rc-cap-btn rc-cap-btn--primary rc-cap-press" onClick={onConfirm} disabled={busy}>
             {copy.lockConfirm}
           </button>
         </div>
