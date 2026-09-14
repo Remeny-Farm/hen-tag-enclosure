@@ -1,0 +1,18 @@
+/* Demo harness chrome only; not part of the drop-in component. */
+.rc-cap-demo-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rc-space-sm);
+  justify-content: space-between;
+  margin-block-end: var(--rc-card-gap);
+}
+
+.rc-cap-demo-bar__group {
+  display: flex;
+  gap: var(--rc-space-xs);
+}
+
+.rc-cap-demo-bar .rc-cap-btn[aria-pressed='true'] {
+  background: var(--rc-pasture-strong);
+  color: var(--rc-page);
+}

@@ -1,0 +1,246 @@
+/* === Cap editor === */
+.rc-cap-editor {
+  display: grid;
+  gap: var(--rc-card-gap);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 48em) { /* design-tokens-allow: layout breakpoint, no breakpoint token yet */
+  .rc-cap-editor {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+  }
+}
+
+.rc-cap-editor__preview {
+  display: grid;
+  gap: var(--rc-space-md);
+  justify-items: center;
+}
+
+.rc-cap-editor__preview .rc-section-heading {
+  justify-self: stretch;
+}
+
+.rc-cap-status {
+  color: var(--rc-muted);
+  font-size: var(--rc-font-small-size);
+  margin: 0;
+}
+
+.rc-cap-status[data-status='locked'],
+.rc-cap-status[data-status='batched'],
+.rc-cap-status[data-status='printed'] {
+  color: var(--rc-pasture-strong);
+  font-weight: var(--rc-weight-semibold);
+}
+
+.rc-cap-status[data-status='installed'] {
+  color: var(--rc-success);
+  font-weight: var(--rc-weight-semibold);
+}
+
+.rc-cap-proof {
+  inline-size: var(--rc-panel-min);
+  max-inline-size: 100%;
+  border-radius: var(--rc-radius-card);
+  border: var(--rc-border-thin) solid color-mix(in srgb, var(--rc-wood) 40%, transparent);
+  background: var(--rc-paper-bright);
+}
+
+.rc-cap-editor__options {
+  display: grid;
+  gap: var(--rc-space-lg);
+}
+
+.rc-cap-options {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-inline-size: 0;
+}
+
+.rc-cap-options legend {
+  margin-block-end: var(--rc-space-sm);
+  padding: 0;
+}
+
+.rc-cap-options__grid {
+  display: grid;
+  gap: var(--rc-space-sm);
+  grid-template-columns: repeat(auto-fill, minmax(calc(var(--rc-tap) * 2.5), 1fr));
+}
+
+.rc-cap-option {
+  min-block-size: var(--rc-tap);
+  border: var(--rc-border-thin) solid color-mix(in srgb, var(--rc-wood) 40%, transparent);
+  border-radius: var(--rc-radius-button);
+  padding: var(--rc-space-sm);
+  display: grid;
+  gap: var(--rc-space-xs);
+  justify-items: center;
+  align-content: center;
+  text-align: center;
+  cursor: pointer;
+  background: var(--rc-paper);
+  color: var(--rc-ink);
+  font-size: var(--rc-font-small-size);
+  transition: background var(--rc-transition-fast) ease, outline-color var(--rc-transition-fast) ease;
+}
+
+.rc-cap-option[data-checked='true'] {
+  outline: var(--rc-focus-size) solid var(--rc-yolk);
+  outline-offset: calc(-1 * var(--rc-border-thin));
+  background: color-mix(in srgb, var(--rc-yolk) 14%, var(--rc-paper));
+}
+
+.rc-cap-option:focus-within {
+  outline: var(--rc-focus-size) solid var(--rc-pasture-strong);
+  outline-offset: var(--rc-space-xs);
+}
+
+.rc-cap-options:disabled .rc-cap-option {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.rc-cap-option__swatch {
+  inline-size: var(--rc-space-lg);
+  block-size: var(--rc-space-lg);
+  border-radius: var(--rc-radius-pill);
+  border: var(--rc-border-thin) solid color-mix(in srgb, var(--rc-ink) 25%, transparent);
+}
+
+.rc-cap-option__title {
+  font-weight: var(--rc-weight-medium);
+}
+
+.rc-cap-option__badge {
+  color: var(--rc-muted);
+  font-size: var(--rc-font-micro-size);
+}
+
+.rc-cap-price {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rc-space-xs);
+  white-space: nowrap;
+}
+
+.rc-cap-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rc-space-sm);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.rc-cap-btn {
+  border: var(--rc-border-thin) solid transparent;
+  border-radius: var(--rc-radius-button);
+  cursor: pointer;
+  font: inherit;
+  font-weight: var(--rc-weight-bold);
+  min-block-size: var(--rc-tap);
+  padding-inline: var(--rc-space-lg);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rc-space-sm);
+}
+
+.rc-cap-btn--primary {
+  background: var(--rc-pasture-strong);
+  color: var(--rc-page);
+}
+
+.rc-cap-btn--ghost {
+  background: transparent;
+  border-color: color-mix(in srgb, var(--rc-pasture) 60%, var(--rc-wood));
+  color: var(--rc-pasture-strong);
+}
+
+.rc-cap-btn--ghost:hover {
+  background: color-mix(in srgb, var(--rc-pasture) 14%, transparent);
+}
+
+.rc-cap-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.rc-cap-btn__price {
+  font-weight: var(--rc-weight-medium);
+  opacity: 0.85;
+}
+
+/* === Lock dialog === */
+.rc-cap-dialog__overlay {
+  align-items: center;
+  background: color-mix(in srgb, var(--rc-soil) 55%, transparent);
+  display: grid;
+  inset: 0;
+  justify-items: center;
+  padding: var(--rc-space-lg);
+  position: fixed;
+  z-index: 50; /* design-tokens-allow: modal stacking order, no z-index token yet */
+}
+
+.rc-cap-dialog {
+  background: var(--rc-paper);
+  border: var(--rc-border-thin) solid color-mix(in srgb, var(--rc-wood) 40%, transparent);
+  border-radius: var(--rc-radius-card);
+  box-shadow: var(--rc-lift-shadow);
+  inline-size: min(var(--rc-panel-min), 100%);
+  padding: var(--rc-space-xl);
+  display: grid;
+  gap: var(--rc-space-md);
+}
+
+.rc-cap-dialog__title {
+  font-family: var(--rc-font-display), serif;
+  font-size: var(--rc-font-h1-size);
+  font-weight: var(--rc-weight-bold);
+  margin: 0;
+}
+
+.rc-cap-dialog__desc {
+  color: var(--rc-muted);
+  font-size: var(--rc-font-small-size);
+  margin: 0;
+}
+
+.rc-cap-dialog__facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--rc-space-xs) var(--rc-space-md);
+  margin: 0;
+  align-items: center;
+}
+
+.rc-cap-dialog__facts dt {
+  color: var(--rc-muted);
+  font-size: var(--rc-font-small-size);
+}
+
+.rc-cap-dialog__facts dd {
+  margin: 0;
+}
+
+.rc-cap-dialog__actions {
+  display: flex;
+  gap: var(--rc-space-sm);
+  justify-content: flex-end;
+}
+
+/* Visually hidden radio inputs; the tile is the visible control. */
+.rc-cap-sr-only {
+  position: absolute;
+  inline-size: var(--rc-border-thin);
+  block-size: var(--rc-border-thin);
+  padding: 0;
+  margin: calc(-1 * var(--rc-border-thin));
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
