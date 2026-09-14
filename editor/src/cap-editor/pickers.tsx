@@ -14,8 +14,12 @@ export type PickerOption<T extends string | null> = {
 
 function Glyph({ d, reach }: { d: string; reach: number }) {
   const r = reach + 0.5;
+  // Band patterns live in the top window of the cap, so their tile shows
+  // the upper half at twice the scale instead of a mostly empty disc.
+  const band = reach > 10;
+  const viewBox = band ? `${-r} ${-r} ${2 * r} ${r * 0.55}` : `${-r} ${-r} ${2 * r} ${2 * r}`;
   return (
-    <svg className="rc-cap-option__glyph" viewBox={`${-r} ${-r} ${2 * r} ${2 * r}`} aria-hidden="true" focusable="false">
+    <svg className="rc-cap-option__glyph" viewBox={viewBox} preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false">
       <g transform="scale(1,-1)">
         <path d={d} fillRule="evenodd" />
       </g>
