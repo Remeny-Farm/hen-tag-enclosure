@@ -115,14 +115,28 @@ export function CapEditor({ henId, client, catalog, layout, copy, walletCopy, lo
     swatch: [s.text.hex, s.accent.hex],
     badge: s.price_grain === 0 ? copy.free : <Price amount={BigInt(s.price_grain)} locale={locale} />,
   }));
+  const centreReach = layout.core_r;
+  const bandReach = layout.band.r_max;
   const centreOptions: PickerOption<string | null>[] = [
     { id: null, title: copy.noneOption },
-    ...catalog.icons.map((i) => ({ id: `icon:${i.id}`, title: i.name[lang] })),
-    ...catalog.centre_patterns.map((p) => ({ id: `centre:${p.id}`, title: p.name[lang] })),
+    ...catalog.icons.map((i) => ({
+      id: `icon:${i.id}`,
+      title: i.name[lang],
+      glyph: { d: layout.icons[i.id as keyof typeof layout.icons], reach: centreReach },
+    })),
+    ...catalog.centre_patterns.map((p) => ({
+      id: `centre:${p.id}`,
+      title: p.name[lang],
+      glyph: { d: layout.centre_patterns[p.id as keyof typeof layout.centre_patterns], reach: centreReach },
+    })),
   ];
   const bandOptions: PickerOption<string | null>[] = [
     { id: null, title: copy.noneOption },
-    ...catalog.band_patterns.map((p) => ({ id: p.id, title: p.name[lang] })),
+    ...catalog.band_patterns.map((p) => ({
+      id: p.id,
+      title: p.name[lang],
+      glyph: { d: layout.band_patterns[p.id as keyof typeof layout.band_patterns], reach: bandReach },
+    })),
   ];
 
   if (!design) {

@@ -9,6 +9,7 @@ import type { CapDesign } from './cap-editor/types.js';
 import { en } from './copy/en.js';
 import { hu } from './copy/hu.js';
 import { asShellCopy } from './copy/types.js';
+import proofSample from './assets/proof-sample.svg?inline';
 
 // Demo harness only: three hens in different states, one shared wallet, a
 // locale toggle. In chirp the (patron) page supplies the SDK client, the
@@ -16,7 +17,7 @@ import { asShellCopy } from './copy/types.js';
 const HENS: CapDesign[] = [
   { henId: 'h67', serial: 67, scheme: 'classic', icon: 'heart', centre: null, band: null, status: 'draft', designHash: '', proofUrl: null },
   { henId: 'h8', serial: 8, scheme: 'meadow', icon: null, centre: 'rings', band: 'dots', status: 'locked', designHash: '0371884d05cc4f6b', proofUrl: null },
-  { henId: 'h12345', serial: 12345, scheme: 'sunset', icon: 'star', centre: null, band: 'stripes', status: 'installed', designHash: '', proofUrl: '/proof-sample.svg' },
+  { henId: 'h12345', serial: 12345, scheme: 'sunset', icon: 'star', centre: null, band: 'stripes', status: 'installed', designHash: '', proofUrl: proofSample },
 ];
 
 export function Page() {

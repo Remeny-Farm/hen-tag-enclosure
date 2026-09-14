@@ -111,6 +111,16 @@
   border: var(--rc-border-thin) solid color-mix(in srgb, var(--rc-ink) 25%, transparent);
 }
 
+.rc-cap-option__glyph {
+  inline-size: var(--rc-space-xl);
+  block-size: var(--rc-space-xl);
+  fill: var(--rc-ink);
+}
+
+.rc-cap-option[data-checked='true'] .rc-cap-option__glyph {
+  fill: var(--rc-soil);
+}
+
 .rc-cap-option__title {
   font-weight: var(--rc-weight-medium);
 }
