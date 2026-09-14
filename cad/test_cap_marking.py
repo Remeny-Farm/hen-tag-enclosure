@@ -122,6 +122,21 @@ if "--bambu" in sys.argv:
     check(all_checks_passed(r) and "P1S.3mf" in r.stdout and f.exists(),
           "cap_88888_P1S.3mf produced with registration verify")
 
+print("=== layout export and proof ===")
+r = run_cli("67", "--icon", "heart", "--band", "stripes",
+            "--layout-json", str(OUT / "layout.json"), "--proof", str(OUT / "proof_67.svg"))
+check(all_checks_passed(r), "generate with layout + proof", "" if all_checks_passed(r) else (r.stdout + r.stderr)[-200:])
+import json as _json
+lay = _json.loads((OUT / "layout.json").read_text())
+check(lay["schema"] == "hen-cap-layout/1" and len(lay["number"]["digits"]) == 10, "layout has 10 digits")
+check(abs(lay["number"]["advance"] - 3.814) < 0.01, "digit advance 3.814", str(lay["number"]["advance"]))
+check(all(v["d"].startswith("M ") for v in lay["number"]["digits"].values()), "digit paths well-formed")
+check(set(lay["icons"]) == {"heart", "star", "flower", "egg", "sun", "moon"}, "layout icons complete")
+check(set(lay["centre_patterns"]) == {"rings", "solid", "dots"} and set(lay["band_patterns"]) == {"stripes", "dots", "arc"},
+      "layout patterns complete")
+svg = (OUT / "proof_67.svg").read_text()
+check(svg.count("<path") == 2 and "#101010" in svg and "#F4F4F0" in svg, "proof has both colours")
+
 print("=== catalog parity and design hash ===")
 sys.path.insert(0, str(HERE))
 from cap_design import design_hash, load_catalog, validate_design  # noqa: E402

@@ -764,6 +764,11 @@ def main() -> None:
                          f">= {COVER_MIN} mm of cover")
     ap.add_argument("--font", default=FONT_DEFAULT, choices=sorted(FONT_CHOICES),
                     help=f"lettering face (default {FONT_DEFAULT})")
+    ap.add_argument("--layout-json", default=None,
+                    help="also write the preview layout JSON (hen-cap-layout/1) here")
+    ap.add_argument("--proof", default=None, help="write a top-view proof SVG here")
+    ap.add_argument("--scheme", default="classic",
+                    help="catalog scheme id for the proof colours (default classic)")
     ap.add_argument("--skip-bambu", action="store_true",
                     help="skip the Bambu Studio project export (tests, CI)")
     a = ap.parse_args()
@@ -856,6 +861,19 @@ def main() -> None:
 
     if not ok:
         raise SystemExit("checks failed, nothing exported")
+
+    if a.layout_json:
+        from cap_svg import write_layout
+        write_layout(Path(a.layout_json))
+        print(f"  exported {Path(a.layout_json).name}  (preview layout)")
+    if a.proof:
+        from cap_design import load_catalog
+        from cap_svg import write_proof
+        scheme = next((s for s in load_catalog()["schemes"] if s["id"] == a.scheme), None)
+        if scheme is None:
+            raise SystemExit(f"unknown scheme {a.scheme!r}")
+        write_proof(Path(a.proof), mk, core, scheme)
+        print(f"  exported {Path(a.proof).name}  (proof, scheme {a.scheme})")
 
     # --- export, print orientation, one shared transform ---------------------
     flipped = bd.Rot(180, 0, 0) * shell
