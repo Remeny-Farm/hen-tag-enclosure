@@ -36,7 +36,7 @@ path and a reviewer checklist: [`DESIGN-NOTES.md`](DESIGN-NOTES.md).
 - React 19, TypeScript strict, vitest + testing-library, English-only source;
   Hungarian only inside `src/copy/hu.ts`.
 
-## Integration map (executed only on instruction, in chirp)
+## Integration map (landed in chirp on 2026-09-14, PR Remeny-Farm/chirp#2409; kept for orientation)
 
 | Prototype file | Lands in chirp as |
 |---|---|

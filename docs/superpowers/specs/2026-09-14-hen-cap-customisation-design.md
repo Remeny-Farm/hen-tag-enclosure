@@ -1,7 +1,7 @@
 # Hen Cap Customisation — Design
 
 - **Date**: 2026-09-14
-- **Status**: in progress — the generator side (§6) and the editor prototype (§7) are built on branch `feat/cap-customisation`; the chirp side (§8) is not
+- **Status**: built. Generator side (§6) and editor prototype (§7) on branch `feat/cap-customisation` of this repo; chirp side (§8) merged on 2026-09-14 as https://github.com/Remeny-Farm/chirp/pull/2409 (ADR-0244). See *Outcome* at the end.
 - **Scope of this repository**: the generator changes, the batch CLI, the
   catalog manifest, the preview layout export, and a browser-testable
   prototype of the patron editor built with chirp's own UI library. The chirp
@@ -293,3 +293,27 @@ screens, automatic proof upload from the CLI, server-side CAD.
    the accent colour (v1: accent only).
 4. Whether staff upload proofs from the admin UI or the CLI gets an optional
    upload later.
+
+## Outcome (2026-09-14)
+
+- **This repo**: catalog (`cad/catalog.json`: 3 Prusament schemes = base + two free
+  colours + Clear window, packs basic / vibe 30 / drop 80 limited, 26 icons,
+  16 patterns, five colour zones with rules, fees), `cad/cap_motifs.py` +
+  `check_motifs.py`, four-body generator (base shell, clear LED annulus, colours
+  a/b per zone; number 4.5 pt above the window), `cap_svg.py` layout/proof,
+  `bambu_project.py` (four-filament template), `cap_batch.py` with a
+  generator-fingerprinted cache; suites 77 / 9 / 15 green, a 36-cap plate slices
+  to 36 objects in ~4 h 13 m. The `editor/` prototype was redesigned as a
+  game-like three-step flow and scored 95/100 by an independent review
+  (`editor/DESIGN-NOTES.md`); paging arrows on the rails were added last.
+- **chirp** (PR #2409): ADR-0244, two migrations (`hen_cap_designs`,
+  `hen_cap_batches`, `hen_cap_*` RPCs charging through `spend_hard_currency`),
+  endpoint family `hen-cap` (6 patron + 6 admin functions), the editor in
+  `packages/real-chicken-ui/src/cap-editor/`, web entry Account → "My cap"
+  (`/account/cap`), Tyutyu app entry Settings → Real farm → "My hen's cap"
+  (flag `henCapEditor`), admin `/hen-caps` batch page producing
+  `hen-cap-batch/1`. Web deploy verified (HTTP 200 on both hosts).
+- **Still open**: promote the two migrations and 12 functions to Supabase
+  (manual lane) and create the public-read bucket `hen-cap-proofs`; print the
+  first real plate; measure filament hexes on printed swatches; decide the
+  Drop pack's expiry mechanism (`available_until` is not modelled yet).
