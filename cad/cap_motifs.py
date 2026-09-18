@@ -196,6 +196,24 @@ def saturn_sketch() -> bd.Sketch:
     return bd.Circle(3.9) + ring
 
 
+def cloud_sketch() -> bd.Sketch:
+    """Three puffs on a flat base."""
+    return _union([_at(-1.70, 1.35, bd.Circle(2.55)), _at(1.35, 1.85, bd.Circle(3.00)),
+                   _at(4.05, 0.75, bd.Circle(2.10)),
+                   bd.Polygon((-4.25, -2.35), (6.15, -2.35), (6.15, 1.35), (-4.25, 1.35), align=None)])
+
+
+def qr_eye_sketch() -> bd.Sketch:
+    """A QR finder mark: 1.8 mm frame, 1.4 mm moat, 3.8 mm block."""
+    return bd.Rectangle(10.2, 10.2) - bd.Rectangle(6.6, 6.6) + bd.Rectangle(3.8, 3.8)
+
+
+def infinity_sketch() -> bd.Sketch:
+    """Two overlapping rings; the holes stay 1.7 mm apart at the crossing."""
+    outer = _at(-3.05, 0, bd.Circle(3.45)) + _at(3.05, 0, bd.Circle(3.45))
+    return outer - _at(-3.05, 0, bd.Circle(2.20)) - _at(3.05, 0, bd.Circle(2.20))
+
+
 # --- "drop" icons -----------------------------------------------------------
 def skull_sketch() -> bd.Sketch:
     head = _at(0, 1.2, bd.Circle(5.2)) + _at(0, -3.0, bd.Rectangle(6.4, 4.4))
@@ -270,6 +288,85 @@ def paw_sketch() -> bd.Sketch:
     pad = _at(0, -2.4, bd.Ellipse(4.2, 3.3))
     toes = [(-4.9, 1.5), (-1.75, 3.6), (1.75, 3.6), (4.9, 1.5)]
     return _union([pad] + [_at(x, y, bd.Circle(1.25)) for x, y in toes])
+
+
+def twinkle_sketch() -> bd.Sketch:
+    """Four-point star, tips on the axes cut to 1.0 mm flats, valleys at
+    r 1.85 on the diagonals: 12 vertices."""
+    pts = []
+    for k in range(4):
+        c, s_ = math.cos(math.radians(90 * k)), math.sin(math.radians(90 * k))
+        for x, y in ((6.95, -0.5), (6.95, 0.5)):
+            pts.append((x * c - y * s_, x * s_ + y * c))
+        pts.append(_polar(1.85, 45 + 90 * k))
+    return bd.Sketch() + bd.Polygon(*pts, align=None)
+
+
+def bow_sketch() -> bd.Sketch:
+    """Two loops and two tails as one simple polygon."""
+    pts = [(0, 1.55), (-5.00, 3.35), (-6.60, 1.55), (-1.20, -0.35), (-4.35, -4.30), (-2.85, -5.25),
+           (-0.60, -1.50), (0.60, -1.50), (2.85, -5.25), (4.35, -4.30), (1.20, -0.35), (6.60, 1.55),
+           (5.00, 3.35)]
+    return bd.Sketch() + bd.Polygon(*pts, align=None)
+
+
+def flame_sketch() -> bd.Sketch:
+    """Round base, a main tongue with a rounded tip, a side tongue."""
+    return _union([
+        _at(0, 1.35, bd.Circle(2.95)),
+        bd.Polygon((-2.05, 2.30), (2.05, 2.30), (1.45, 6.35), (0.55, 6.55), align=None),
+        _at(1.00, 6.20, bd.Circle(0.60)),
+        bd.Polygon((-2.70, 1.10), (-0.90, 1.95), (-2.35, 4.45), (-3.30, 3.95), align=None),
+        _at(-2.85, 4.25, bd.Circle(0.58)),
+    ])
+
+
+PIXEL_HEART_ROWS = (".##.##.", "#######", "#######", ".#####.", "..###..", "...#...")
+PIXEL_HEART_CELL = 1.70
+
+
+def pixel_heart_sketch() -> bd.Sketch:
+    """The cells of PIXEL_HEART_ROWS (7 x 6, 1.7 mm, centred), traced as one
+    outline so the result is a single face without internal cell edges."""
+    x = [PIXEL_HEART_CELL * (i - 3.5) for i in range(8)]   # column edges, left to right
+    y = [PIXEL_HEART_CELL * (3 - j) for j in range(7)]     # row edges, top to bottom
+    pts = [(x[1], y[0]), (x[3], y[0]), (x[3], y[1]), (x[4], y[1]), (x[4], y[0]), (x[6], y[0]),
+           (x[6], y[1]), (x[7], y[1]), (x[7], y[3]), (x[6], y[3]), (x[6], y[4]), (x[5], y[4]),
+           (x[5], y[5]), (x[4], y[5]), (x[4], y[6]), (x[3], y[6]), (x[3], y[5]), (x[2], y[5]),
+           (x[2], y[4]), (x[1], y[4]), (x[1], y[3]), (x[0], y[3]), (x[0], y[1]), (x[1], y[1])]
+    return bd.Sketch() + bd.Polygon(*pts, align=None)
+
+
+def spiral_sketch(r0: float = 1.00, pitch: float = 0.3979, turns: float = 2.0,
+                  w: float = 1.20) -> bd.Sketch:
+    """Archimedean band, centre line r = r0 + pitch * phi for phi in
+    0..2 pi turns, width w, round caps at both ends: one polygon made of
+    both edges and the two cap arcs."""
+    phi_end = 2 * math.pi * turns
+    h = w / 2
+
+    def frame(phi):
+        """Centre-line point and the angle of its left normal."""
+        r = r0 + pitch * phi
+        tx = pitch * math.cos(phi) - r * math.sin(phi)
+        ty = pitch * math.sin(phi) + r * math.cos(phi)
+        return r * math.cos(phi), r * math.sin(phi), math.atan2(tx, -ty)
+
+    def edge(phi, sign):
+        cx, cy, a = frame(phi)
+        return cx + sign * h * math.cos(a), cy + sign * h * math.sin(a)
+
+    def cap(phi, a_from):
+        """Half circle from a_from, turning clockwise through the tangent."""
+        cx, cy, _ = frame(phi)
+        return [(cx + h * math.cos(a_from - math.pi * k / 12), cy + h * math.sin(a_from - math.pi * k / 12))
+                for k in range(1, 12)]
+
+    steps = int(math.degrees(phi_end) / 2)
+    phis = [phi_end * i / steps for i in range(steps + 1)]
+    pts = ([edge(p, 1) for p in phis] + cap(phi_end, frame(phi_end)[2])
+           + [edge(p, -1) for p in reversed(phis)] + cap(0, frame(0)[2] + math.pi))
+    return bd.Sketch() + bd.Polygon(*pts, align=None)
 
 
 # --- centre patterns --------------------------------------------------------
@@ -445,7 +542,10 @@ ICONS = {
     "sparkles": sparkles_sketch, "bolt": bolt_sketch, "smiley": smiley_sketch,
     "cherry": cherry_sketch, "butterfly": butterfly_sketch, "mushroom": mushroom_sketch,
     "clover": clover_sketch, "rainbow": rainbow_sketch, "ghost": ghost_sketch,
-    "saturn": saturn_sketch,
+    "saturn": saturn_sketch, "cloud": cloud_sketch, "qr_eye": qr_eye_sketch,
+    "infinity": infinity_sketch,
+    "twinkle": twinkle_sketch, "bow": bow_sketch, "flame": flame_sketch,
+    "pixel_heart": pixel_heart_sketch, "spiral": spiral_sketch,
     "skull": skull_sketch, "alien": alien_sketch, "diamond": diamond_sketch,
     "crown": crown_sketch, "yinyang": yinyang_sketch, "peace": peace_sketch,
     "drop": drop_sketch, "broken_heart": broken_heart_sketch, "eye": eye_sketch,

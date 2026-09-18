@@ -1,13 +1,114 @@
 {
   "schema": "hen-cap-catalog/2",
-  "generator_version": "dev",
+  "generator_version": "2026-09-18",
   "window": {
     "filament": "Prusament PETG Clear",
     "hex": "#E6EDF1",
     "role": "clear",
-    "note": "AMS slot 2 on every plate; the LED annulus is always clear, any other zone may choose it"
+    "note": "AMS slot 2 on every plate, Bambu schemes included; the LED annulus is always clear, any other zone may choose it"
   },
   "schemes": [
+    {
+      "id": "eggshell",
+      "name": {
+        "hu": "Tojáshéj",
+        "en": "Eggshell"
+      },
+      "base": {
+        "filament": "Bambu Lab PETG Basic White (30106)",
+        "hex": "#FFFFFF"
+      },
+      "price_grain": 0,
+      "a": {
+        "filament": "Bambu Lab PETG Basic Dark Brown (30800)",
+        "hex": "#4F2C1D"
+      },
+      "b": {
+        "filament": "Bambu Lab PETG Basic Dark Beige (30403)",
+        "hex": "#DBC8B6"
+      }
+    },
+    {
+      "id": "lavender",
+      "name": {
+        "hu": "Levendula",
+        "en": "Lavender"
+      },
+      "base": {
+        "filament": "Bambu Lab PETG Basic Misty Blue (30108)",
+        "hex": "#688197"
+      },
+      "price_grain": 100,
+      "a": {
+        "filament": "Bambu Lab PETG Basic Black (30105)",
+        "hex": "#000000"
+      },
+      "b": {
+        "filament": "Bambu Lab PETG Translucent Purple (32700)",
+        "hex": "#D6ABFF",
+        "translucent": true
+      }
+    },
+    {
+      "id": "mocha",
+      "name": {
+        "hu": "Mokka",
+        "en": "Mocha"
+      },
+      "base": {
+        "filament": "Bambu Lab PETG Basic Dark Brown (30800)",
+        "hex": "#4F2C1D"
+      },
+      "price_grain": 100,
+      "a": {
+        "filament": "Bambu Lab PETG Basic Dark Beige (30403)",
+        "hex": "#DBC8B6"
+      },
+      "b": {
+        "filament": "Bambu Lab PETG Basic Pine Green (30503)",
+        "hex": "#034638"
+      }
+    },
+    {
+      "id": "pinewood",
+      "name": {
+        "hu": "Fenyves",
+        "en": "Pinewood"
+      },
+      "base": {
+        "filament": "Bambu Lab PETG Basic Pine Green (30503)",
+        "hex": "#034638"
+      },
+      "price_grain": 100,
+      "a": {
+        "filament": "Bambu Lab PETG Basic White (30106)",
+        "hex": "#FFFFFF"
+      },
+      "b": {
+        "filament": "Bambu Lab PETG Basic Black (30105)",
+        "hex": "#000000"
+      }
+    },
+    {
+      "id": "emerald_gold",
+      "name": {
+        "hu": "Arany",
+        "en": "Gold"
+      },
+      "base": {
+        "filament": "Prusament PETG Galaxy Black",
+        "hex": "#1C1B20"
+      },
+      "price_grain": 500,
+      "a": {
+        "filament": "Prusament PETG Yellow Gold",
+        "hex": "#E2A72E"
+      },
+      "b": {
+        "filament": "Prusament PETG Emerald Green",
+        "hex": "#0E3A2F"
+      }
+    },
     {
       "id": "pasture",
       "name": {
@@ -26,7 +127,8 @@
       "b": {
         "filament": "Prusament PETG Signal White",
         "hex": "#F2F2EE"
-      }
+      },
+      "retired": true
     },
     {
       "id": "bluedye",
@@ -46,7 +148,8 @@
       "b": {
         "filament": "Prusament PETG Chalky Blue",
         "hex": "#6C93BF"
-      }
+      },
+      "retired": true
     },
     {
       "id": "gold",
@@ -66,7 +169,8 @@
       "b": {
         "filament": "Prusament PETG Signal White",
         "hex": "#F2F2EE"
-      }
+      },
+      "retired": true
     }
   ],
   "zones": {
@@ -75,7 +179,8 @@
         "hu": "Külső gyűrű",
         "en": "Outer ring"
       },
-      "default": "base"
+      "default": "base",
+      "opaque": true
     },
     "number": {
       "name": {
@@ -83,7 +188,8 @@
         "en": "Number"
       },
       "default": "a",
-      "must_differ_from": "ring"
+      "must_differ_from": "ring",
+      "opaque": true
     },
     "disc": {
       "name": {
@@ -195,7 +301,7 @@
         "en": "Sparkles"
       },
       "pack": "vibe",
-      "price_grain": 30
+      "price_grain": 50
     },
     {
       "id": "bolt",
@@ -204,7 +310,7 @@
         "en": "Bolt"
       },
       "pack": "vibe",
-      "price_grain": 30
+      "price_grain": 50
     },
     {
       "id": "smiley",
@@ -213,7 +319,7 @@
         "en": "Smiley"
       },
       "pack": "vibe",
-      "price_grain": 30
+      "price_grain": 50
     },
     {
       "id": "cherry",
@@ -222,7 +328,7 @@
         "en": "Cherry"
       },
       "pack": "vibe",
-      "price_grain": 30
+      "price_grain": 50
     },
     {
       "id": "butterfly",
@@ -231,7 +337,7 @@
         "en": "Butterfly"
       },
       "pack": "vibe",
-      "price_grain": 30
+      "price_grain": 50
     },
     {
       "id": "mushroom",
@@ -240,7 +346,7 @@
         "en": "Mushroom"
       },
       "pack": "vibe",
-      "price_grain": 30
+      "price_grain": 50
     },
     {
       "id": "clover",
@@ -249,7 +355,7 @@
         "en": "Clover"
       },
       "pack": "vibe",
-      "price_grain": 30
+      "price_grain": 50
     },
     {
       "id": "rainbow",
@@ -258,7 +364,7 @@
         "en": "Rainbow"
       },
       "pack": "vibe",
-      "price_grain": 30
+      "price_grain": 50
     },
     {
       "id": "ghost",
@@ -267,7 +373,7 @@
         "en": "Ghost"
       },
       "pack": "vibe",
-      "price_grain": 30
+      "price_grain": 50
     },
     {
       "id": "saturn",
@@ -276,7 +382,84 @@
         "en": "Saturn"
       },
       "pack": "vibe",
-      "price_grain": 30
+      "price_grain": 50
+    },
+    {
+      "id": "cloud",
+      "name": {
+        "hu": "Felhő",
+        "en": "Cloud"
+      },
+      "pack": "vibe",
+      "price_grain": 50
+    },
+    {
+      "id": "qr_eye",
+      "name": {
+        "hu": "QR-jel",
+        "en": "QR mark"
+      },
+      "pack": "vibe",
+      "price_grain": 50
+    },
+    {
+      "id": "infinity",
+      "name": {
+        "hu": "Végtelen",
+        "en": "Infinity"
+      },
+      "pack": "vibe",
+      "price_grain": 50
+    },
+    {
+      "id": "twinkle",
+      "name": {
+        "hu": "Csillanás",
+        "en": "Twinkle"
+      },
+      "pack": "drop",
+      "price_grain": 1000,
+      "limited": true
+    },
+    {
+      "id": "bow",
+      "name": {
+        "hu": "Masni",
+        "en": "Bow"
+      },
+      "pack": "drop",
+      "price_grain": 950,
+      "limited": true
+    },
+    {
+      "id": "flame",
+      "name": {
+        "hu": "Láng",
+        "en": "Flame"
+      },
+      "pack": "drop",
+      "price_grain": 900,
+      "limited": true
+    },
+    {
+      "id": "pixel_heart",
+      "name": {
+        "hu": "Pixelszív",
+        "en": "Pixel heart"
+      },
+      "pack": "drop",
+      "price_grain": 800,
+      "limited": true
+    },
+    {
+      "id": "spiral",
+      "name": {
+        "hu": "Spirál",
+        "en": "Spiral"
+      },
+      "pack": "drop",
+      "price_grain": 750,
+      "limited": true
     },
     {
       "id": "skull",
@@ -285,7 +468,7 @@
         "en": "Skull"
       },
       "pack": "drop",
-      "price_grain": 80,
+      "price_grain": 850,
       "limited": true
     },
     {
@@ -295,7 +478,7 @@
         "en": "Alien"
       },
       "pack": "drop",
-      "price_grain": 80,
+      "price_grain": 700,
       "limited": true
     },
     {
@@ -305,7 +488,7 @@
         "en": "Diamond"
       },
       "pack": "drop",
-      "price_grain": 80,
+      "price_grain": 550,
       "limited": true
     },
     {
@@ -315,7 +498,7 @@
         "en": "Crown"
       },
       "pack": "drop",
-      "price_grain": 80,
+      "price_grain": 600,
       "limited": true
     },
     {
@@ -325,7 +508,7 @@
         "en": "Yin-yang"
       },
       "pack": "drop",
-      "price_grain": 80,
+      "price_grain": 450,
       "limited": true
     },
     {
@@ -335,7 +518,7 @@
         "en": "Peace"
       },
       "pack": "drop",
-      "price_grain": 80,
+      "price_grain": 350,
       "limited": true
     },
     {
@@ -345,7 +528,7 @@
         "en": "Drop"
       },
       "pack": "drop",
-      "price_grain": 80,
+      "price_grain": 300,
       "limited": true
     },
     {
@@ -355,7 +538,7 @@
         "en": "Broken heart"
       },
       "pack": "drop",
-      "price_grain": 80,
+      "price_grain": 500,
       "limited": true
     },
     {
@@ -365,7 +548,7 @@
         "en": "Eye"
       },
       "pack": "drop",
-      "price_grain": 80,
+      "price_grain": 650,
       "limited": true
     },
     {
@@ -375,7 +558,7 @@
         "en": "Paw"
       },
       "pack": "drop",
-      "price_grain": 80,
+      "price_grain": 400,
       "limited": true
     }
   ],
@@ -443,7 +626,7 @@
         "en": "Checker"
       },
       "pack": "vibe",
-      "price_grain": 30
+      "price_grain": 50
     },
     {
       "id": "zigzag",
@@ -452,7 +635,7 @@
         "en": "Zigzag"
       },
       "pack": "vibe",
-      "price_grain": 30
+      "price_grain": 50
     },
     {
       "id": "wave",
@@ -461,7 +644,7 @@
         "en": "Wave"
       },
       "pack": "vibe",
-      "price_grain": 30
+      "price_grain": 50
     },
     {
       "id": "dashes",
@@ -470,7 +653,7 @@
         "en": "Loading"
       },
       "pack": "vibe",
-      "price_grain": 30
+      "price_grain": 50
     },
     {
       "id": "pixel",
@@ -479,7 +662,7 @@
         "en": "Pixel"
       },
       "pack": "vibe",
-      "price_grain": 30
+      "price_grain": 50
     },
     {
       "id": "barcode",
@@ -488,7 +671,7 @@
         "en": "Barcode"
       },
       "pack": "drop",
-      "price_grain": 80,
+      "price_grain": 700,
       "limited": true
     },
     {
@@ -498,7 +681,7 @@
         "en": "Tally"
       },
       "pack": "drop",
-      "price_grain": 80,
+      "price_grain": 350,
       "limited": true
     },
     {
@@ -508,7 +691,7 @@
         "en": "Sparkle dots"
       },
       "pack": "drop",
-      "price_grain": 80,
+      "price_grain": 600,
       "limited": true
     },
     {
@@ -518,7 +701,7 @@
         "en": "Growing dots"
       },
       "pack": "drop",
-      "price_grain": 80,
+      "price_grain": 450,
       "limited": true
     },
     {
@@ -528,7 +711,7 @@
         "en": "Double arc"
       },
       "pack": "drop",
-      "price_grain": 80,
+      "price_grain": 380,
       "limited": true
     }
   ],

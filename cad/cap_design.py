@@ -6,7 +6,7 @@
 tests. Deliberately free of build123d so it imports in milliseconds.
 
 The catalog (catalog.json) is the source of truth for what a patron may
-choose: colour schemes (text + accent filament), icons, centre patterns, band
+choose: colour schemes (base + two free filaments), icons, centre patterns, band
 patterns and the Golden Grain fees. The app ships an identical copy; the
 parity test in test_cap_marking.py keeps this file and the generator's
 sketch tables in step.
@@ -69,7 +69,11 @@ def design_hash(serial: int, scheme: str, icon: str | None,
 
 
 def validate_design(cat: dict, d: dict) -> list[str]:
-    """Every problem with one design, as human-readable strings."""
+    """Every problem with one design, as human-readable strings.
+
+    A retired scheme is valid here: retired only means the app no longer
+    offers it for a new design, and designs already locked on it are still
+    batched and printed. The app's validateHenCapDraft refuses it at save."""
     errs = []
     serial = d.get("serial")
     if not isinstance(serial, int) or isinstance(serial, bool) or not 1 <= serial <= SERIAL_MAX:
@@ -97,6 +101,14 @@ def validate_design(cat: dict, d: dict) -> list[str]:
                 other = rule.get("must_differ_from")
                 if other and colours[z] == colours[other]:
                     errs.append(f"zone {z} must differ in colour from {other}")
+    scheme = entry(cat, "schemes", d.get("scheme"))
+    if not errs and scheme is not None:
+        # A see-through filament washes out as a 0.64 mm inlay, so it may
+        # decorate but never carry the serial: zones marked opaque refuse it.
+        for z in ZONES:
+            role = colours[z]
+            if cat["zones"][z].get("opaque") and role != "clear" and scheme[role].get("translucent"):
+                errs.append(f"zone {z} must be opaque; {scheme[role]['filament']} is translucent")
     if not errs and "design_hash" in d:
         want = design_hash(serial, d["scheme"], icon, centre, band, colours)
         if d["design_hash"] != want:

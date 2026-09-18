@@ -2,7 +2,7 @@
   "schema": "hen-cap-batch/1",
   "batch_id": "2026-09-14-pasture-01",
   "scheme": "pasture",
-  "generator_version": "dev",
+  "generator_version": "2026-09-18",
   "created_at": "2026-09-14T18:00:00Z",
   "caps": [
     {

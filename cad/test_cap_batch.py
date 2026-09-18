@@ -68,6 +68,8 @@ cases = [
     ("number same colour as ring", lambda b: b["caps"][0]["colours"].update(number="base"), "must differ"),
     ("colours missing", lambda b: b["caps"][1].pop("colours"), "colours missing"),
     ("unknown scheme", lambda b: b.update(scheme="nope"), "unknown scheme"),
+    ("translucent ring", lambda b: (b.update(scheme="lavender"),
+                                    b["caps"][0]["colours"].update(ring="b", band="a")), "must be opaque"),
     ("too many caps", lambda b: b["caps"].extend(
         [dict(b["caps"][2], serial=100 + i, design_hash="x") for i in range(40)]), "1..36"),
 ]
