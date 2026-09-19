@@ -65,6 +65,10 @@ matrix = [
                "--colours", "ring=a,number=base,disc=b,centre=a,band=b"]),
     ("9",     ["--icon", "sparkles", "--band", "checker", "--scheme", "bluedye"]),
     ("10",    ["--icon", "moon", "--band", "arc", "--colours", "number=clear,disc=clear,centre=b,band=clear"]),
+    # a 2026-09-18 Bambu scheme with its translucent colour on the disc
+    ("11",    ["--icon", "twinkle", "--band", "wave", "--scheme", "lavender"]),
+    ("12",    ["--icon", "spiral", "--scheme", "emerald_gold",
+               "--colours", "ring=base,number=a,disc=b,centre=a,band=b"]),
 ]
 for number, extra in matrix:
     r = run_cli(number, *extra)
@@ -105,6 +109,7 @@ for label, args, needle in [
     ("band same colour as the ring", ["7", "--band", "arc", "--colours", "ring=b"], "must differ"),
     ("bad colour role", ["7", "--colours", "ring=red"], "zone=role"),
     ("clear number on a clear ring", ["7", "--colours", "ring=clear,number=clear"], "must differ"),
+    ("translucent number", ["7", "--scheme", "lavender", "--colours", "number=b"], "must be opaque"),
 ]:
     r = run_cli(*args)
     blob = r.stdout + r.stderr
@@ -173,8 +178,28 @@ check(validate_design(cat, {"serial": 67, "scheme": "pasture", "icon": "heart",
 check(validate_design(cat, {"serial": 67, "scheme": "pasture", "icon": "heart", "centre": None, "band": None,
                             "colours": {**DC, "number": "base"}})
       == ["zone number must differ in colour from ring"], "number/ring colour rule")
-check(lock_price(cat, {"scheme": "gold", "icon": "skull", "centre": None, "band": "barcode"}) == 660,
+check(lock_price(cat, {"scheme": "gold", "icon": "skull", "centre": None, "band": "barcode"}) == 2050,
       "lock price sums scheme + icon + band")
+LAV = {"ring": "base", "number": "a", "disc": "b", "centre": "a", "band": "b"}
+check(validate_design(cat, {"serial": 67, "scheme": "lavender", "icon": "twinkle", "centre": None,
+                            "band": None, "colours": LAV}) == [],
+      "translucent colour allowed on the disc and the band")
+for zone, colours in (("ring", {**LAV, "ring": "b", "band": "a"}), ("number", {**LAV, "number": "b"})):
+    check(validate_design(cat, {"serial": 67, "scheme": "lavender", "icon": None, "centre": None,
+                                "band": None, "colours": colours})
+          == [f"zone {zone} must be opaque; Bambu Lab PETG Translucent Purple (32700) is translucent"],
+          f"translucent colour refused on the {zone}")
+check(validate_design(cat, {"serial": 67, "scheme": "lavender", "icon": None, "centre": None, "band": None,
+                            "colours": {**LAV, "number": "clear"}}) == [],
+      "clear stays allowed on an opaque zone")
+retired = [s["id"] for s in cat["schemes"] if s.get("retired")]
+check(retired == ["pasture", "bluedye", "gold"], "pasture, bluedye and gold are retired", str(retired))
+check(all(validate_design(cat, {"serial": 8, "scheme": sid, "icon": "heart", "centre": None, "band": None})
+          == [] for sid in retired), "retired schemes still validate (locked designs print)")
+check([(s["id"], r) for s in cat["schemes"] for r in ("base", "a", "b") if s[r].get("translucent")]
+      == [("lavender", "b")], "only lavender's colour b is translucent")
+check([z for z, rule in cat["zones"].items() if rule.get("opaque")] == ["ring", "number"],
+      "ring and number are the opaque zones")
 check(all("pack" in e and "price_grain" in e for e in cat["icons"] + cat["band_patterns"]),
       "every icon and band carries a pack and a price")
 check(validate_design(cat, {"serial": 0, "scheme": "nope", "icon": None, "centre": None,
@@ -183,7 +208,8 @@ check(validate_design(cat, {"serial": 0, "scheme": "nope", "icon": None, "centre
 
 # Tidy the per-test artifacts (gitignored anyway, but keep out/ readable).
 for pat in ("*_88888*", "*_31415*", "*_40404*", "*_1.*", "*_1_*", "*_7*", "*_1.stl",
-            "*_99999*", "*_3.*", "*_3_*", "*_4242*", "*_5.*", "*_5_*", "*_6.*", "*_6_*", "*_8.*", "*_8_*", "*_9.*", "*_9_*", "*_10.*", "*_10_*"):
+            "*_99999*", "*_3.*", "*_3_*", "*_4242*", "*_5.*", "*_5_*", "*_6.*", "*_6_*", "*_8.*", "*_8_*", "*_9.*", "*_9_*", "*_10.*", "*_10_*",
+            "*_11.*", "*_11_*", "*_12.*", "*_12_*"):
     for f in OUT.glob(pat):
         f.unlink()
 
