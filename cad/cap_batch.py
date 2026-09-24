@@ -70,7 +70,8 @@ def generator_fingerprint() -> str:
     bodies for an unchanged design."""
     import hashlib
     h = hashlib.sha256()
-    for name in ("hen_tag_enclosure.py", "cap_marking.py", "cap_motifs.py", "cap_design.py"):
+    for name in ("hen_tag_enclosure.py", "board_holyiot_25008.py", "cap_marking.py",
+                 "cap_motifs.py", "cap_design.py"):
         h.update((HERE / name).read_bytes())
     return h.hexdigest()[:12]
 
@@ -94,7 +95,11 @@ def build_bodies(c: dict, cap_solid, cache: Path) -> tuple[dict, dict, bool]:
             continue
         oriented = bd.Pos(0, 0, dz) * (bd.Rot(180, 0, 0) * solid)
         bodies[name] = canonical_mesh(oriented, f"{c['serial']}:{name}")
-    sketches = {k: v for k, v in sketches.items()}
+    # Cache plain faces, not the sketches themselves: build123d >= 0.13 keeps
+    # an OCCT BRepTools_History on boolean results, which does not pickle.
+    # The proof writer only reads faces (cap_svg.sketch_to_path).
+    sketches = {k: None if v is None else bd.Compound([bd.Face(f.wrapped) for f in v.faces()])
+                for k, v in sketches.items()}
     key.mkdir(parents=True, exist_ok=True)
     (key / "bodies.pkl").write_bytes(pickle.dumps(bodies))
     (key / "sketches.pkl").write_bytes(pickle.dumps(sketches))
