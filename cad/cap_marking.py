@@ -48,7 +48,13 @@ from pathlib import Path
 import build123d as bd
 
 sys.path.insert(0, str(Path(__file__).parent))
+import board_holyiot_25008 as brd  # noqa: E402
 from hen_tag_enclosure import OUT, P, PETG_DENSITY, build_cap  # noqa: E402
+from cap_design import COLOUR_ROLES, ZONES, default_colours, load_catalog  # noqa: E402
+from cap_motifs import (  # noqa: E402
+    BAND_PATTERN_R, BAND_WINDOW, CORE_PATTERN_R_MAX, ICONS, PATTERN_ERODE, PATTERN_FEATURE_MIN,
+    PATTERN_GAP_MIN, PATTERNS_BAND, PATTERNS_CENTRE, SLIVER_AREA,
+)
 
 # --- inlay ----------------------------------------------------------------
 DEPTH_DEFAULT = 0.64   # coloured PETG is translucent; thinner reads washed-out
@@ -81,14 +87,23 @@ GAP_MIN = 1.0          # opaque wall between the marking and the clear ring
 # and rotation-independence comes free. A print trial killed the previous
 # opaque-shell + clear-ring layout: at the 2.9 mm band the lettering was
 # unreadable, and the customer look wanted a clear body anyway.
-LED_R = 10.0           # LED centre 2.5 mm in from the Ø25 edge; operator caliper
-FOAM_INNER = (16.0, 12.0)   # foam ring kept inboard, off the LED radius
+LED_R = brd.LED_R      # LED centre r 9.84, manufacturer STEP (caliper said 10.0)
+# The clear window: an annulus through the whole top plate of an otherwise
+# base-coloured shell. The LED can land anywhere in it, so it stays free of
+# every inlay; the number sits entirely outside it (BAND_R_MIN below).
+LED_RING = (8.5, 11.5)
+WINDOW_MARGIN = 0.10
+FOAM_INNER = (P.foam_od, P.foam_id)   # foam ring kept inboard, off the LED radius
+# Worst-case radial reach of the LED emitting package: board play in the
+# cavity plus cap concentricity on the seal bore.
+LED_PLAY = P.fit_board + P.fit_seal_r
+LED_HALF_REACH = LED_PLAY + 0.5   # + half the ~1.0 mm lens of the 1.6 x 1.5 package
 
 # --- accent core (third colour) ---------------------------------------------
 # A full disc, not a ring: the accent colour fills the centre right up to the
 # icon's outline (the icon is cut from the disc, so the two colours meet
 # edge to edge with no clear gap -- same as the printed first trial looked).
-CORE_R_OUT = 8.6
+CORE_R_OUT = LED_RING[0]   # the disc meets the window edge to edge
 
 # --- coin lettering band --------------------------------------------------
 # Deterministic: the font SIZES are fixed, so every tag in a production run
@@ -97,18 +112,19 @@ CORE_R_OUT = 8.6
 # With no clear ring to dodge, the band runs from just outside the accent
 # core to the scallops: 9.6..15.55, nearly 6 mm tall -- twice the letter
 # height of the failed print.
-BAND_R_MIN = 9.60      # accent core outer edge 8.6 + the full opaque wall
+BAND_R_MIN = LED_RING[1] + WINDOW_MARGIN   # 11.60: the number never enters the window
 BAND_R_MAX = 15.40
-NUM_FONT = 6.0         # digits; ~4.4 mm tall on the print
+NUM_FONT = 4.5         # digits; ~3.4 mm tall on the print, 3.8 mm with the dilation
 NUM_MAX_DIGITS = 5
 # The message is set in ALL CAPS, classic coin typography -- and a hard
 # physical necessity, found by the test suite: a lowercase descender (g j p q
 # y) combined with an accented capital needs ~1.15 em of band height, which at
 # any printable stroke width does not fit the 2.9 mm band. Capitals with
 # Hungarian accents alone do.
-TOP_FONT = 5.2         # caps ~3.8 mm tall on the print
-TOP_R_MIN = 9.60
-TOP_R_MAX = 15.55      # 0.17 mm to the scallop nicks
+TOP_FONT = 3.6         # caps ~2.6 mm tall on the print (staff-only message; accented
+                       # capitals need 3.85 mm of the 3.95 mm band above the window)
+TOP_R_MIN = LED_RING[1] + 0.05   # the message may come 0.05 closer to the window than the number
+TOP_R_MAX = 15.60      # 0.12 mm to the scallop nicks
 SPAN_TOP_MAX = 200.0   # deg the top message may occupy
 GAP_ARC = 14.0         # deg clearance between top and bottom texts, each side
 
@@ -122,12 +138,7 @@ TOP_CHARSET = (
     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
     "áéíóöőúüűÁÉÍÓÖŐÚÜŰ0123456789 .:!?'\"+-")
 
-# --- centre icon (fix choices for the customer UI) -------------------------
-# Icons sit inside the accent disc; keep >= 1.2 mm of accent frame around
-# them (reach <= CORE_R_OUT - 1.2 = 7.4).
-HEART_W = 10.0         # heart size; its lobes reach r = HEART_W/sqrt(2) = 7.07
-STAR_R = 6.9           # five-point star outer radius
-FLOWER_R = 6.4         # daisy overall radius
+# --- centre icons and patterns: cap_motifs.py ---------------------------------
 
 
 _ACTIVE_FONT: str | None = None
@@ -263,48 +274,43 @@ def top_char_budget() -> tuple[float, int]:
     return per_char_deg, int((SPAN_TOP_MAX - 2.0) // per_char_deg)
 
 
-def heart_sketch(width: float = HEART_W) -> bd.Sketch:
-    """Parametric heart: two lobes on a 45-deg square."""
-    s = width / (2 ** 0.5)
-    body = bd.Rot(0, 0, 45) * bd.Rectangle(s, s)
-    o = s / (2 * 2 ** 0.5)
-    return body + bd.Pos(-o, o) * bd.Circle(s / 2) + bd.Pos(o, o) * bd.Circle(s / 2)
+def pattern_feature_ok(sk: bd.Sketch) -> bool:
+    """Every island survives an erosion by half of PATTERN_FEATURE_MIN, so its
+    narrowest part is at least that wide. Exact on the simple shapes patterns
+    are made of, where the 2A/P estimator used for glyphs under-reads short
+    bars (a 0.9 x 2.6 mm stripe measures 0.67)."""
+    big = bd.Circle(24.0)
+    eroded = big - fatten(big - sk, PATTERN_ERODE)   # complement trick: booleans only
+    return len(real_faces(eroded)) == len(real_faces(sk))
 
 
-def star_sketch(r_out: float = STAR_R) -> bd.Sketch:
-    """Five-point star; the dilation in the inlay pipeline rounds the tips."""
-    r_in = r_out * 0.5
-    pts = []
-    for k in range(5):
-        a_out = math.radians(90 + 72 * k)
-        a_in = math.radians(90 + 36 + 72 * k)
-        pts.append((r_out * math.cos(a_out), r_out * math.sin(a_out)))
-        pts.append((r_in * math.cos(a_in), r_in * math.sin(a_in)))
-    return bd.Sketch() + bd.Polygon(*pts, align=None)
+def real_faces(sk: bd.Sketch) -> list:
+    """Faces that are not boolean slivers (crossings leave zero-area faces)."""
+    return [f for f in sk.faces() if f.area > SLIVER_AREA]
 
 
-def flower_sketch(r: float = FLOWER_R) -> bd.Sketch:
-    """Six-petal daisy: petals overlap the centre disc so it prints as one
-    connected shape."""
-    petal_r = r * 0.34
-    orbit = r - petal_r
-    out = bd.Circle(r * 0.30)
-    for k in range(6):
-        a = math.radians(60 * k)
-        out = out + bd.Pos(orbit * math.cos(a), orbit * math.sin(a)) * bd.Circle(petal_r)
-    return out
+def led_ring_clear_fraction(*inlays: bd.Sketch) -> float:
+    """Fraction of the LED window (r 8.5-11.5) not covered by any inlay."""
+    ring = bd.Circle(LED_RING[1]) - bd.Circle(LED_RING[0])
+    covered = 0.0
+    for sk in inlays:
+        hit = ring & sk
+        covered += hit.area if hit is not None else 0.0
+    return 1.0 - covered / ring.area
 
 
-# All parametric geometry -- no emoji fonts, so every machine renders the
-# same shape. These are the fixed choices offered to customers.
-ICONS = {"heart": heart_sketch, "star": star_sketch, "flower": flower_sketch,
-         "none": None}
+def pattern_gap_ok(sk: bd.Sketch) -> bool:
+    """Islands closer than PATTERN_GAP_MIN merge when each is dilated by half
+    of it, so a changed face count means a gap too narrow to print."""
+    return len(real_faces(fatten(sk, PATTERN_GAP_MIN / 2))) == len(real_faces(sk))
 
 
-def build_lettering(number: str, top: str, icon: str):
+def build_lettering(number: str, top: str, icon: str, centre: str | None = None,
+                    band: str | None = None):
     """Compose the marking: bottom number arc, optional top message arc,
-    optional centre icon. Fixed font sizes; misfits are rejected, never
-    shrunk. Returns (sketch, spans_deg, stroke_raw)."""
+    optional centre icon or centre pattern, optional band pattern. Fixed font
+    sizes; misfits are rejected, never shrunk.
+    Returns (marking sketch, centre element, spans_deg, stroke_raw, band sketch)."""
     bot, stroke_raw = fit_arc_text(number, NUM_FONT, 270.0, upright=False,
                                    r_min=BAND_R_MIN, r_max=BAND_R_MAX)
     mk = bot
@@ -329,36 +335,88 @@ def build_lettering(number: str, top: str, icon: str):
         spans["top"] = span_top
 
     ic = None
-    if ICONS[icon] is not None:
+    if centre is not None:
+        ic = PATTERNS_CENTRE[centre]()
+    elif ICONS[icon] is not None:
         ic = ICONS[icon]()
-        if radial_range(ic)[1] > CORE_R_OUT - 1.2:
-            raise SystemExit(f"icon '{icon}' too large for the accent disc")
+    if ic is not None:
+        if radial_range(ic)[1] > CORE_PATTERN_R_MAX + 1e-6:
+            raise SystemExit(f"centre element too large for the disc (r {radial_range(ic)[1]:.2f} > {CORE_PATTERN_R_MAX})")
         mk = mk + ic
-    return mk, ic, spans, stroke_raw
+    band_sk = PATTERNS_BAND[band](int(number)) if band is not None else None
+    if band_sk is not None:
+        # Keep the accent-colour band pattern away from the text-colour number:
+        # the window is fixed, so this only trips if BAND_WINDOW is widened.
+        lo_w, hi_w = BAND_WINDOW
+        gap = min((b_lo - hi_w) % 360, (lo_w - b_hi) % 360)
+        if gap < GAP_ARC / 2:
+            raise SystemExit(f"band pattern within {gap:.0f} deg of the number")
+    return mk, ic, spans, stroke_raw, band_sk
 
 
-def build(number: str, top: str, icon: str, depth: float):
-    """Three bodies: clear shell, lettering+icon inlay, accent core ring
-    inlay. Both inlays are `depth` deep in the top plate, flush outside."""
+def build(number: str, top: str, icon: str, depth: float, centre: str | None = None,
+          band: str | None = None, cap: bd.Solid | None = None,
+          colours: dict | None = None):
+    """Four bodies for four AMS slots, all the colour work in the top plate:
+
+        shell   base colour: the cap, its top plate outside the window, and
+                every zone or inlay a design leaves in the base colour
+        window  clear: the LED annulus r 8.5-11.5 through the whole plate
+        a, b    the scheme's two free colours: whichever zones (outer ring,
+                inner disc, full plate depth) and inlays (number, centre
+                element, band pattern; `depth` deep, flush outside) the design
+                assigns to them
+
+    colours maps the five zones (cap_design.ZONES) to 'base' | 'a' | 'b';
+    the catalog's must_differ_from rules keep every inlay visible on its zone.
+    Returns (cap, bodies, sketches, spans, stroke_raw) with
+    bodies = {"shell", "window", "a", "b"} (a/b may be None) and
+    sketches = {"marking", "centre", "band", "ring", "disc"}."""
     p = P
     z_top = p.z_ceiling + p.cap_top_t
+    col = dict(colours or default_colours(load_catalog()))
+    mk, ic, spans, stroke_raw, band_sk = build_lettering(number, top, icon, centre, band)
+    lettering = mk - ic if ic is not None else mk           # number (+ message) only
 
-    mk, ic, spans, stroke_raw = build_lettering(number, top, icon)
-    # Accent disc with the icon cut out with its own sketch: the two colours
-    # share the boundary exactly, no clear gap between them.
-    core = bd.Circle(CORE_R_OUT) - ic if ic is not None else bd.Circle(CORE_R_OUT)
+    if cap is None:
+        cap = build_cap(p, foam=FOAM_INNER)
 
-    cap = build_cap(p, foam=FOAM_INNER)
+    def plate(sk: bd.Sketch) -> bd.Solid:
+        return (bd.Pos(0, 0, p.z_ceiling) * bd.extrude(sk, amount=p.cap_top_t)) & cap
 
-    # The pocket is cut with the inlay solid itself, so the two are identical
-    # by construction.
-    inlay = bd.Pos(0, 0, z_top - depth) * bd.extrude(mk, amount=depth)
-    shell = cap - inlay
+    def inlay(sk: bd.Sketch | None) -> bd.Solid | None:
+        return None if sk is None else (bd.Pos(0, 0, z_top - depth) * bd.extrude(sk, amount=depth)) & cap
 
-    core_body = bd.Pos(0, 0, z_top - depth) * bd.extrude(core, amount=depth)
-    shell = shell - core_body
+    window = plate(bd.Circle(LED_RING[1]) - bd.Circle(LED_RING[0]))
+    zones = {"ring": plate(bd.Circle(p.r_cap_out + 2) - bd.Circle(LED_RING[1])),
+             "disc": plate(bd.Circle(CORE_R_OUT))}
+    inlays = {"number": inlay(lettering), "centre": inlay(ic), "band": inlay(band_sk)}
+    host = {"number": "ring", "band": "ring", "centre": "disc"}
 
-    return cap, shell, inlay, core_body, mk, core, spans, stroke_raw
+    # The clear body starts as the mandatory LED annulus and grows by every
+    # zone or inlay the design assigns to clear, exactly like a and b.
+    bodies = {}
+    for c in ("a", "b", "clear"):
+        body = window if c == "clear" else None
+        for z, solid in zones.items():
+            if col[z] == c:
+                body = solid if body is None else body + solid
+        # inlays of another colour sitting in this colour's zone leave it
+        for k, solid in inlays.items():
+            if solid is not None and col[host[k]] == c and col[k] != c and body is not None:
+                body = body - solid
+        for k, solid in inlays.items():
+            if solid is not None and col[k] == c:
+                body = solid if body is None else body + solid
+        bodies[c] = body
+    shell = cap
+    for c in ("a", "b", "clear"):
+        if bodies[c] is not None:
+            shell = shell - bodies[c]
+    bodies = {"shell": shell, "window": bodies["clear"], "a": bodies["a"], "b": bodies["b"]}
+    sketches = {"marking": lettering, "centre": ic, "band": band_sk,
+                "ring": bd.Circle(p.r_cap_out) - bd.Circle(LED_RING[1]), "disc": bd.Circle(CORE_R_OUT)}
+    return cap, bodies, sketches, spans, stroke_raw
 
 
 def canonical_mesh(solid, name: str) -> tuple[list, list]:
@@ -518,7 +576,7 @@ def write_bambu_project(generic: Path, out: Path, extruder_by_name: dict,
         tmp3mf = Path(td) / "project.3mf"
         r = subprocess.run(
             [str(BAMBU_APP), "--load-settings", f"{mach};{proc}",
-             "--load-filaments", f"{fil};{fil};{fil}",
+             "--load-filaments", f"{fil};{fil};{fil};{fil}",
              "--assemble", "--arrange", "0",
              "--export-3mf", str(tmp3mf), str(generic)],
             capture_output=True, text=True)
@@ -622,23 +680,49 @@ def write_bambu_project(generic: Path, out: Path, extruder_by_name: dict,
     return True
 
 
+def parse_colours(text: str | None, cat: dict) -> dict:
+    """'ring=base,number=a,disc=b,centre=a,band=b' -> zone map; missing
+    zones take the catalog defaults."""
+    col = default_colours(cat)
+    if text:
+        for item in text.split(","):
+            zone, _, role = item.strip().partition("=")
+            if zone not in ZONES or role not in COLOUR_ROLES:
+                raise SystemExit(f"--colours: use zone=role with zones {', '.join(ZONES)} "
+                                 f"and roles {', '.join(COLOUR_ROLES)} (got {item!r})")
+            col[zone] = role
+    return col
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("number", help="tag id, bent along the bottom arc, e.g. 67")
     ap.add_argument("--top", default="",
-                    help='message bent along the top arc, e.g. "Szeretlek Bözsi!"')
+                    help='staff-only message bent along the top arc, e.g. "Szeretlek Bözsi!"')
     ap.add_argument("--icon", default="heart", choices=sorted(ICONS),
                     help="centre symbol (default heart)")
+    ap.add_argument("--centre", default=None, choices=sorted(PATTERNS_CENTRE),
+                    help="centre pattern instead of an icon")
+    ap.add_argument("--band", default=None, choices=sorted(PATTERNS_BAND),
+                    help="pattern in the band above the number")
+    ap.add_argument("--colours", default=None,
+                    help="zone colours, e.g. ring=base,number=a,disc=b,centre=a,band=b")
+    ap.add_argument("--scheme", default="pasture",
+                    help="catalog scheme id for the proof colours (default pasture)")
     ap.add_argument("--depth", type=float, default=DEPTH_DEFAULT,
                     help=f"inlay thickness in mm (default {DEPTH_DEFAULT}); must leave "
                          f">= {COVER_MIN} mm of cover")
     ap.add_argument("--font", default=FONT_DEFAULT, choices=sorted(FONT_CHOICES),
                     help=f"lettering face (default {FONT_DEFAULT})")
+    ap.add_argument("--layout-json", default=None,
+                    help="also write the preview layout JSON (hen-cap-layout/1) here")
+    ap.add_argument("--proof", default=None, help="write a top-view proof SVG here")
     ap.add_argument("--skip-bambu", action="store_true",
                     help="skip the Bambu Studio project export (tests, CI)")
     a = ap.parse_args()
     set_font(a.font)
+    cat = load_catalog()
 
     number = a.number.strip()
     if not number.isdigit() or not 1 <= len(number) <= NUM_MAX_DIGITS:
@@ -651,13 +735,25 @@ def main() -> None:
         raise SystemExit(f"message contains unsupported characters: {bad!r} "
                          f"(allowed: letters incl. Hungarian, digits, "
                          f"space and .,:;!?'\"()+-)")
+    if a.centre is not None and "--icon" in sys.argv and a.icon != "none":
+        raise SystemExit("--centre and --icon are mutually exclusive")
+    colours = parse_colours(a.colours, cat)
+    from cap_design import validate_design
+    scheme = next((s for s in cat["schemes"] if s["id"] == a.scheme), None)
+    if scheme is None:
+        raise SystemExit(f"unknown scheme {a.scheme!r}")
+    problems = validate_design(cat, {"serial": int(number), "scheme": a.scheme,
+                                     "icon": None if a.icon == "none" or a.centre else a.icon,
+                                     "centre": a.centre, "band": a.band, "colours": colours})
+    if problems:
+        raise SystemExit("design refused: " + "; ".join(problems))
     depth = a.depth
     if not 0.16 <= depth <= P.cap_top_t - COVER_MIN:
         raise SystemExit(f"--depth must be between 0.16 and {P.cap_top_t - COVER_MIN:.2f} mm")
 
     OUT.mkdir(parents=True, exist_ok=True)
-    cap, shell, inlay, core_body, mk, core, spans, stroke_raw = build(
-        number, top, a.icon, depth)
+    cap, bodies, sk, spans, stroke_raw = build(
+        number, top, a.icon, depth, centre=a.centre, band=a.band, colours=colours)
 
     # --- machine checks ------------------------------------------------------
     ok = True
@@ -669,57 +765,80 @@ def main() -> None:
 
     p = P
     z_top = p.z_ceiling + p.cap_top_t
-    gap_v = abs(cap.volume - (vol(shell) + vol(inlay) + vol(core_body)))
+    present = {k: v for k, v in bodies.items() if v is not None}
+    gap_v = abs(cap.volume - sum(vol(b) for b in present.values()))
     check(gap_v / cap.volume < 5e-4, "parts add up to the cap",
-          f"|cap - sum(parts)| = {gap_v:.4f} mm3 ({gap_v / cap.volume * 100:.4f}%)")
-    check(abs(inlay.bounding_box().max.Z - z_top) < 1e-6, "marking flush with the outer face",
-          f"offset {abs(inlay.bounding_box().max.Z - z_top):.2e} mm")
-    check(vol(shell & inlay) < 1e-3, "shell/marking overlap", f"{vol(shell & inlay):.5f} mm3")
-    check(p.cap_top_t - depth >= COVER_MIN, "cover above the marking",
-          f"{p.cap_top_t - depth:.2f} mm of the {p.cap_top_t:.2f} top plate (inlay {depth:.2f})")
-    check(inlay.is_valid and shell.is_valid, "solids valid",
-          f"marking valid={inlay.is_valid} shell valid={shell.is_valid}; "
-          f"marking {inlay.volume:.1f} mm3 / {inlay.volume * PETG_DENSITY:.2f} g")
-    # True stroke = raw font stroke + twice the dilation radius. The 2A/P
-    # estimator under-reads on the dilated outline (its perimeter is longer),
-    # so it is measured on the raw glyphs and the dilation added analytically.
+          f"|cap - sum(parts)| = {gap_v:.4f} mm3 ({gap_v / cap.volume * 100:.4f}%), "
+          f"bodies: {', '.join(present)}")
+    wb = bodies["window"].bounding_box()
+    annulus = (bd.Pos(0, 0, p.z_ceiling) * bd.extrude(bd.Circle(LED_RING[1]) - bd.Circle(LED_RING[0]),
+                                                      amount=p.cap_top_t)) & cap
+    check(abs(wb.max.Z - z_top) < 1e-6 and abs(wb.min.Z - p.z_ceiling) < 1e-6
+          and abs(vol(annulus & bodies["window"]) - annulus.volume) < 1e-3,
+          "LED annulus is clear through the whole plate",
+          f"z {wb.min.Z:.2f}..{wb.max.Z:.2f}, r {LED_RING[0]}..{LED_RING[1]}"
+          + (", plus clear zones" if vol(bodies["window"]) > annulus.volume + 1e-3 else ""))
+    for c in ("a", "b"):
+        if bodies[c] is not None:
+            bb = bodies[c].bounding_box()
+            check(abs(bb.max.Z - z_top) < 1e-6 and bb.min.Z >= p.z_ceiling - 1e-6,
+                  f"colour {c} flush with the outer face", f"z {bb.min.Z:.2f}..{bb.max.Z:.2f}")
+    names = list(present)
+    for i, x in enumerate(names):
+        for y in names[i + 1:]:
+            check(vol(present[x] & present[y]) < 1e-3, f"{x}/{y} do not overlap",
+                  f"{vol(present[x] & present[y]):.5f} mm3")
+    check(all(b.is_valid for b in present.values()), "solids valid",
+          "; ".join(f"{k} {vol(v):.1f} mm3" for k, v in present.items()))
     stroke = stroke_raw + 2 * GLYPH_FATTEN
     check(stroke >= FEATURE_MIN, "thinnest glyph stroke printable",
           f"{stroke:.2f} mm ({stroke_raw:.2f} raw + 2x{GLYPH_FATTEN} dilation); "
           f"fixed fonts number={NUM_FONT} top={TOP_FONT}")
     check(True, "arc occupancy",
-          "  ".join(f"{k} {v:.0f} deg" for k, v in spans.items())
-          + f"  (top max {SPAN_TOP_MAX:.0f})")
-    lo, hi = radial_range(mk)
-    # The caps band is the outermost lettering zone; the scallop nicks start
-    # at r 15.72.
+          "  ".join(f"{k} {v:.0f} deg" for k, v in spans.items()) + f"  (top max {SPAN_TOP_MAX:.0f})")
+    lo, hi = radial_range(sk["marking"])
+    check(lo >= LED_RING[1] - 1e-6, "number clear of the LED window",
+          f"innermost point r {lo:.2f} >= {LED_RING[1]}")
     check(hi <= TOP_R_MAX + 1e-6, "lettering clear of the grip scallops",
           f"outermost point r {hi:.2f} <= {TOP_R_MAX}")
-
-    cb = core_body.bounding_box()
-    check(core_body.is_valid and core_body.volume > 20, "accent core solid",
-          f"{core_body.volume:.1f} mm3 disc r {CORE_R_OUT} minus the icon")
-    check(abs(cb.max.Z - z_top) < 1e-6, "core flush with the outer face",
-          f"offset {abs(cb.max.Z - z_top):.2e} mm")
-    check(vol(shell & core_body) < 1e-3 and vol(inlay & core_body) < 1e-3,
-          "core overlaps nothing",
-          f"shell {vol(shell & core_body):.5f}, marking {vol(inlay & core_body):.5f} mm3")
-    check(vol(inlay & core_body) < 1e-3, "icon fills its cut in the disc",
-          f"intersection {vol(inlay & core_body):.5f} mm3 -- shared boundary, no gap")
-    check(True, "LED visibility",
-          f"whole shell is clear PETG; LED at r {LED_R:.0f} shines through "
-          f"anywhere -- no angular alignment needed")
-    check(True, "foam ring stays inboard",
-          f"OD {FOAM_INNER[0]:.0f} / ID {FOAM_INNER[1]:.0f}, off the LED radius")
+    for label, sk_ in (("centre element", sk["centre"]), ("band pattern", sk["band"])):
+        if sk_ is None:
+            continue
+        if label == "centre element":
+            check(radial_range(sk_)[1] <= CORE_PATTERN_R_MAX + 1e-6, "centre element inside the disc",
+                  f"r_max {radial_range(sk_)[1]:.2f} <= {CORE_PATTERN_R_MAX}")
+        check(pattern_feature_ok(sk_), f"{label} feature printable",
+              f"every island survives a {PATTERN_ERODE:.2f} mm erosion "
+              f"({len(real_faces(sk_))} islands)")
+        check(pattern_gap_ok(sk_), f"{label} gaps printable",
+              f">= {PATTERN_GAP_MIN} mm between islands")
+    clear = led_ring_clear_fraction(*[x for x in (sk["marking"], sk["centre"], sk["band"]) if x is not None])
+    led_lo, led_hi = LED_R - LED_HALF_REACH, LED_R + LED_HALF_REACH
+    check(LED_RING[0] <= led_lo and led_hi <= LED_RING[1], "LED lands inside the window",
+          f"LED r {led_lo:.2f}..{led_hi:.2f} (centre {LED_R} +- {LED_HALF_REACH:.2f}) "
+          f"in r {LED_RING[0]}..{LED_RING[1]}")
+    check(clear >= 0.999, "LED window stays clear", f"{clear * 100:.0f}% of r {LED_RING[0]}-{LED_RING[1]} open")
+    check(True, "zone colours", ", ".join(f"{z}={colours[z]}" for z in ZONES) + f"  scheme {scheme['id']}")
 
     if not ok:
         raise SystemExit("checks failed, nothing exported")
 
+    if a.layout_json:
+        from cap_svg import write_layout
+        write_layout(Path(a.layout_json))
+        print(f"  exported {Path(a.layout_json).name}  (preview layout)")
+    if a.proof:
+        from cap_svg import write_proof
+        write_proof(Path(a.proof), sk, scheme, colours)
+        print(f"  exported {Path(a.proof).name}  (proof, scheme {a.scheme})")
+
     # --- export, print orientation, one shared transform ---------------------
-    flipped = bd.Rot(180, 0, 0) * shell
+    flipped = bd.Rot(180, 0, 0) * bodies["shell"]
     dz = -flipped.bounding_box().min.Z
-    parts = {f"cap_{number}": shell, f"marking_{number}": inlay,
-             f"core_{number}": core_body}
+    parts = {f"cap_{number}": bodies["shell"], f"window_{number}": bodies["window"]}
+    for c in ("a", "b"):
+        if bodies[c] is not None:
+            parts[f"{c}_{number}"] = bodies[c]
     oriented = {}
     for name, solid in parts.items():
         oriented[name] = bd.Pos(0, 0, dz) * (bd.Rot(180, 0, 0) * solid)
@@ -730,19 +849,19 @@ def main() -> None:
     write_3mf(OUT / f"cap_{number}.3mf", meshes)
     print(f"  exported cap_{number}.3mf  ({len(parts)} bodies, registered)")
 
-    extruders = {f"cap_{number}": 1, f"marking_{number}": 2, f"core_{number}": 3}
+    # AMS slots: 1 base, 2 clear, 3 colour a, 4 colour b
+    extruders = {f"cap_{number}": 1, f"window_{number}": 2, f"a_{number}": 3, f"b_{number}": 4}
+    extruders = {k: v for k, v in extruders.items() if k in parts}
     if not a.skip_bambu and write_bambu_project(OUT / f"cap_{number}.3mf",
                            OUT / f"cap_{number}_P1S.3mf", extruders,
                            f"cap_{number}",
                            {n: s.bounding_box() for n, s in oriented.items()}):
-        print(f"  exported cap_{number}_P1S.3mf  (Bambu project, filaments "
-              f"pre-assigned: 1=clear shell, 2=text+icon, 3=accent core)")
-        print(f"\nBambu Studio: open cap_{number}_P1S.3mf, load the project "
-              f"settings, AMS slots: 1 = clear PETG, 2 = text colour, "
-              f"3 = accent colour. Done.")
+        print(f"  exported cap_{number}_P1S.3mf  (Bambu project, AMS 1 = base "
+              f"{scheme['base']['filament']}, 2 = clear, 3 = {scheme['a']['filament']}, "
+              f"4 = {scheme['b']['filament']})")
     else:
-        print(f"\nSlicer: open cap_{number}.3mf, assign a filament to each part: "
-              f"cap = clear PETG, marking = text colour, core = accent colour.")
+        print(f"\nSlicer: open cap_{number}.3mf, assign filaments: cap = base colour, "
+              f"window = clear PETG, a/b = the scheme's two colours.")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,54 @@
+{
+  "schema": "hen-cap-batch/1",
+  "batch_id": "2026-09-14-pasture-01",
+  "scheme": "pasture",
+  "generator_version": "2026-09-18",
+  "created_at": "2026-09-14T18:00:00Z",
+  "caps": [
+    {
+      "serial": 67,
+      "icon": "heart",
+      "centre": null,
+      "band": "stripes",
+      "design_hash": "515bd1ffc394d597",
+      "hen_name": "Bözsi",
+      "colours": {
+        "ring": "base",
+        "number": "a",
+        "disc": "b",
+        "centre": "a",
+        "band": "b"
+      }
+    },
+    {
+      "serial": 12345,
+      "icon": "star",
+      "centre": null,
+      "band": "dots",
+      "design_hash": "105418783fca8aac",
+      "hen_name": "Piroska",
+      "colours": {
+        "ring": "a",
+        "number": "base",
+        "disc": "b",
+        "centre": "a",
+        "band": "b"
+      }
+    },
+    {
+      "serial": 3,
+      "icon": null,
+      "centre": "solid",
+      "band": "arc",
+      "design_hash": "927d42e14a23ab3e",
+      "hen_name": "Kata",
+      "colours": {
+        "ring": "base",
+        "number": "a",
+        "disc": "b",
+        "centre": "a",
+        "band": "b"
+      }
+    }
+  ]
+}

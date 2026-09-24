@@ -1,0 +1,20 @@
+/* === Cap preview (SVG drawn from the generator's layout) === */
+.rc-cap-preview {
+  inline-size: 100%;
+  block-size: auto;
+  max-inline-size: var(--rc-panel-min);
+  display: block;
+  margin-inline: auto;
+}
+
+.rc-cap-preview__shell {
+  /* The fill is the scheme's base filament (data attribute); only the rim
+     line is styled here. */
+  stroke: color-mix(in srgb, var(--rc-ink) 35%, transparent);
+  stroke-width: 0.2;
+}
+
+.rc-cap-preview__glass {
+  /* Clear PETG: a light frosted layer; the base tint is painted over it. */
+  fill: var(--rc-paper-bright);
+}

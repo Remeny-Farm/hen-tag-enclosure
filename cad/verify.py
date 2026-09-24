@@ -8,8 +8,8 @@ Checks nobody can eyeball reliably:
   1. do body and cap collide in the locked position?
   2. does the flipped board fit, holder down into its pocket?
   3. does the fill actually retain the holder?
-  4. is there head clearance, and does the foam ring span it while leaving the
-     LED window clear?
+  4. is there head clearance over the switch, and does the foam ring bear on
+     the board while clearing the switch and the LED?
   5. does the bayonet work -- cap drops on at the entry angle, lugs run free
      to the lock angle, the ramp then wedges, and the locked cap cannot be
      pulled off?
@@ -18,17 +18,28 @@ Checks nobody can eyeball reliably:
   8. is any downward-facing area left unsupported in the print orientation?
 
 Also emits half-section STLs so the internals can be inspected visually.
+
+  --board-step PATH   the manufacturer's STEP: re-extract the board constants
+                      and fail on drift, then collide the real board and its
+                      parts with the body and cap. Skipped when not given.
 """
 
+import argparse
+import math
 import sys
 from pathlib import Path
 
 import build123d as bd
 
 sys.path.insert(0, str(Path(__file__).parent))
+import board_holyiot_25008 as brd  # noqa: E402
 from hen_tag_enclosure import (  # noqa: E402
     OUT, P, build_body, build_cap, cyl,
 )
+
+ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+ap.add_argument("--board-step", type=Path, help="manufacturer STEP of the board")
+args = ap.parse_args()
 
 FAIL: list[str] = []
 WARN: list[str] = []
@@ -53,7 +64,12 @@ cap = build_cap(p)
 # The real board, flipped: holder underneath, PCB on top, offset tangent.
 holder = bd.Pos(p.holder_offset, 0, 0) * bd.Cylinder(
     p.r_holder, p.holder_h, align=(bd.Align.CENTER, bd.Align.CENTER, bd.Align.MIN))
-pcb = cyl(p.r_pcb, p.pcb_env_h, z=p.z_pcb_bottom)
+# Board envelope: the bare board, plus the switch's footprint circle at full
+# height; everything else on the face is lower (board_holyiot_25008).
+pcb = (cyl(p.r_pcb, p.pcb_t, z=p.z_pcb_bottom)
+       + cyl(brd.S1_R_MAX, p.comp_h, z=p.z_pcb_bottom + p.pcb_t)
+       + cyl(brd.PART_R_MAX, max(h for lo, hi, h in brd.PART_H_BY_BAND if lo > 0),
+             z=p.z_pcb_bottom + p.pcb_t))
 board = holder + pcb
 
 print("\n--- 1. assembly interference -----------------------------------------")
@@ -96,18 +112,41 @@ check(p.z_fill_top < p.z_pcb_bottom, "fill clears the PCB face",
       f"({p.fill_relief:.2f} mm)")
 
 print("\n--- 4. vertical stack ------------------------------------------------")
-head = p.z_ceiling - p.stack_h
-check(0.4 <= head <= 1.2, "head clearance over the PCB", f"{head:.2f} mm")
-check(p.foam_t > head, "foam ring compresses",
-      f"{p.foam_t:.1f} mm ring in a {head:.2f} mm gap -> "
-      f"{(p.foam_t - head) / p.foam_t * 100:.0f}% squeeze")
-check(p.foam_od / 2 <= p.r_pcb, "foam ring lands on the PCB",
-      f"ring OD {p.foam_od:.0f} vs PCB dia {p.pcb_dia:.0f}")
-check(p.foam_id >= 14.0, "LED window left clear",
-      f"Ø{p.foam_id:.0f} mm open through the ring")
+# Heights from the manufacturer STEP; the holder under them is still caliper.
+head = p.head_gap
+check(head >= 0.15, "ceiling clears the switch S1",
+      f"{head:.2f} mm over S1 ({p.comp_h:.2f} tall); holder_h is UNVERIFIED -- "
+      f"a holder {head:.2f} mm taller than {p.holder_h} presses the button")
+r_in, r_out = p.foam_id / 2, p.foam_od / 2
+band_h = max(h for lo, hi, h in brd.PART_H_BY_BAND if lo < r_out and hi > r_in)
+check(p.foam_t > p.foam_gap, "foam ring bears on the bare board",
+      f"{p.foam_t:.1f} mm ring in a {p.foam_gap:.2f} mm gap -> "
+      f"{(p.foam_t - p.foam_gap) / p.foam_t * 100:.0f}% squeeze")
+squeeze_parts = (p.foam_t - (p.foam_gap - band_h)) / p.foam_t
+check(squeeze_parts <= 0.70, "foam over the tallest part in its band",
+      f"{band_h:.2f} mm part -> {squeeze_parts * 100:.0f}% local squeeze (limit 70%)")
+check(r_in - p.fit_board > brd.S1_R_MAX, "foam ring clears the switch",
+      f"ring ID r {r_in:.2f} vs S1 r {brd.S1_R_MAX:.2f} + {p.fit_board} play")
+check(r_out + p.fit_board < brd.LED_R_SPAN[0], "foam ring clears the LED",
+      f"ring OD r {r_out:.2f} + {p.fit_board} play vs LED from r {brd.LED_R_SPAN[0]:.2f}")
 check(True, "stack heights still assembling",
-      f"{p.stack_h - (p.foam_t - 0.2):.1f}-{p.stack_h + head:.1f} mm tolerated "
-      f"(nominal {p.stack_h:.1f})")
+      f"holder {p.holder_h - (p.foam_t - p.foam_gap):.2f}-{p.holder_h + head:.2f} mm "
+      f"tolerated (nominal {p.holder_h:.2f}): foam contact to S1 contact")
+
+if args.board_step:
+    print("\n--- 4b. manufacturer STEP --------------------------------------------")
+    got = brd.extract(args.board_step)
+    for key, val in got.items():
+        want = getattr(brd, key)
+        tol = 0.2 if key == "LED_ANGLE" else 0.01
+        check(abs(val - want) <= tol, f"STEP {key}", f"{val:.3f} (constant {want})")
+    real, _ = brd.load(args.board_step, p.z_pcb_bottom)
+    hit = sum(vol(s & (body + cap)) for s in real.solids())
+    check(hit < 1e-3, "real board + parts vs enclosure",
+          f"{hit:.4f} mm3 overlap, {len(real.solids())} solids")
+    bb = real.bounding_box()
+    check(p.z_ceiling - bb.max.Z >= 0.15, "real board under the ceiling",
+          f"top z {bb.max.Z:.2f} vs ceiling z {p.z_ceiling:.2f}")
 
 print("\n--- 5. bayonet closure -----------------------------------------------")
 # The cap is modelled in its locked pose. pose(phi) turns it back toward the
@@ -155,11 +194,11 @@ check(lo <= -0.25 and hi >= 0.25, "ramp absorbs print error",
 n_ok = p.lug_n * (p.entry_half + p.chan_end) < 360.0
 check(n_ok, "channels fit around the skirt",
       f"{p.lug_n} x {p.entry_half + p.chan_end:.0f} deg of {360:.0f}")
-import math  # noqa: E402
-bear = p.lug_n * math.radians(p.lug_arc) * (p.r_core + p.bear_w / 2) * min(
-    p.bear_w - p.fit_seal_r, p.bear_w)
-check(bear >= 4.0, "bearing flat area",
-      f"{bear:.1f} mm2 over {p.lug_n} lugs (flat-on-flat, parallel helices)")
+# Projected area of the lug/lip cone contact, bore radius to lug crest.
+bear = p.lug_n * math.radians(p.lug_arc) * (p.r_cap_seal_bore + p.r_lug) / 2 * (
+    p.r_lug - p.r_cap_seal_bore)
+check(bear >= 4.0, "bearing area",
+      f"{bear:.1f} mm2 over {p.lug_n} lugs (cone-on-cone, parallel helices)")
 check(p.r_cap_seal_bore > p.r_core, "cap bore clears the seal band",
       f"bore r {p.r_cap_seal_bore:.2f} vs band r {p.r_core:.2f}")
 check(p.z_groove_lo > p.z_chan_hi, "O-ring never crosses the lugs",
@@ -182,8 +221,8 @@ check(p.r_cap_out - scallop - p.r_groove_root >= min_wall * 0.8,
 lip_t = p.z_lip_lo - p.z_shoulder
 check(lip_t >= 4 * p.layer, "lip at its thin end",
       f"{lip_t:.2f} mm ({lip_t / p.layer:.1f} layers)")
-check(p.bear_w <= 1.5 * p.nozzle, "bearing flat is a printable overhang",
-      f"{p.bear_w:.2f} mm flat, the rest chamfered at {p.chamfer_deg:.0f} deg")
+check(p.chamfer_deg >= 45.0, "lug/lip/groove cones self-supporting",
+      f"{p.chamfer_deg:.0f} deg from horizontal, no flat overhang")
 check(p.floor_t >= 3 * p.layer, "cavity floor", f"{p.floor_t:.2f} mm")
 
 print("\n--- 7. harness tabs --------------------------------------------------")
@@ -217,18 +256,12 @@ print("\n--- 8. printability: unsupported overhangs ---------------------------"
 # stray floating shelf cannot creep back in unnoticed.
 from collections import defaultdict  # noqa: E402
 
-# Per-part limits. Two features are inherent and accepted:
-#   body -- the lugs' bearing flats, one extrusion width wide, spread over
-#           the ramp helix
-#   cap  -- the O-ring groove's lower flank, which becomes a ~1.1 mm annular
-#           ceiling once the cap is flipped top-plate-down for printing; it
-#           printed on revision A
-# The limits sit just above those. The point is to catch NEW unsupported
-# geometry, not to re-argue features that have already been printed. The
-# inverted rim chamfer that triggered this check contributed 38 mm2 in a single
-# band, so it would have been caught here. The revision B thread flanks were
-# 9.4 mm2 (body) in one band and are gone.
-CLUSTER_LIMIT = {"body": 12.0, "cap": 110.0}  # mm2 in one 0.1 mm height band
+# Per-part limits. Revision D has no flat overhang left: lug undersides, lip
+# tops and the O-ring groove's lower flank are 50 deg cones (the rev C flats
+# under the lips and the groove drew slicer support, 2026-09-24). What
+# remains on the body is the 0.10 mm of lug flat against the seal band. The
+# limit catches any new unsupported geometry, down to a few square mm.
+CLUSTER_LIMIT = {"body": 1.0, "cap": 1.0}  # mm2 in one 0.1 mm height band
 
 
 def overhangs(solid, name: str, bed_z: float) -> float:

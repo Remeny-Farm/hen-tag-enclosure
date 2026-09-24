@@ -31,8 +31,10 @@ Three decisions that are not obvious from the geometry alone:
    flange the way the thread did, and is self-locking.
 
 MEASUREMENT STATUS -- read before trusting any printed part:
+  VERIFIED   the board and its parts: manufacturer STEP, board_holyiot_25008.py
   VERIFIED   the PCB/holder tangency (geometric consequence of 25 and 21 mm)
-  UNVERIFIED every dimension marked below; user caliper readings, 2026-08-28
+  UNVERIFIED the holder: user caliper readings, 2026-08-28 (the STEP's clip
+             model is generic and was discarded)
   UNVERIFIED the bayonet: modelled 2026-09-10, no coupon printed yet
   UNKNOWN    antenna location, elastic cross-section, actual O-ring ID/CS
 
@@ -47,6 +49,8 @@ from pathlib import Path
 
 import build123d as bd
 
+import board_holyiot_25008 as brd
+
 OUT = Path(__file__).parent / "out"
 PETG_DENSITY = 1.27e-3  # g/mm^3
 
@@ -55,11 +59,13 @@ PETG_DENSITY = 1.27e-3  # g/mm^3
 class Params:
     """Every dimension the design depends on, in one place."""
 
-    # --- Board, UNVERIFIED (user caliper 2026-08-28) -------------------------
+    # --- Board, VERIFIED from the manufacturer STEP (board_holyiot_25008) ---
     # Orientation: holder DOWN against the floor, PCB UP under the cap. The
     # LED sits on the PCB face, so it has to look outward, away from the bird.
-    pcb_dia: float = 25.0
-    pcb_env_h: float = 2.0       # full board envelope incl. components
+    pcb_dia: float = brd.PCB_DIA
+    pcb_t: float = brd.PCB_T     # bare board
+    comp_h: float = brd.S1_H     # tallest part on the face, the centre switch
+    # --- Holder, UNVERIFIED (user caliper 2026-08-28) -----------------------
     holder_dia: float = 21.0
     holder_h: float = 4.0        # holder + seated cell, off the PCB face
 
@@ -80,16 +86,18 @@ class Params:
     # skirt lands on the base flange, exactly as the thread used to.
     #
     # Printability rule behind every number here: on both parts, in their
-    # print orientations, the only flat overhang is the bearing flat (one
-    # extrusion width); everything outboard of it is chamfered steeper than
-    # 45 deg. The lugs stand on the seal band, the lips hang from the skirt.
+    # print orientations, NO face is flatter than chamfer_deg -- the slicer's
+    # support detection (Bambu, 30 deg threshold) finds nothing to support.
+    # Lug undersides and lip tops are matching 50 deg cones that bear on each
+    # other. Revision C had a 0.5 mm flat bearing ledge here, and the slicer
+    # put support under all three lips (2026-09-24).
     lug_n: int = 3
     lug_arc: float = 20.0        # angular width of one lug
     lug_d: float = 0.80          # radial protrusion off the seal band
-    lug_h: float = 1.00          # axial height at the lug centre
+    lug_h: float = 1.30          # axial height at the lug centre; the cone
+                                 # takes 0.83 of it, leaving a 0.47 crest
     lug_z: float = 1.80          # underside above the cavity floor, at the centre
-    bear_w: float = 0.50         # flat bearing width = one extrusion width + 0.1
-    chamfer_deg: float = 50.0    # underside/lip chamfer, from horizontal (>45)
+    chamfer_deg: float = 50.0    # lug/lip/groove cone, from horizontal (>45)
     fit_lug_r: float = 0.15      # radial clearance, lug crest to channel root
     fit_lug_z: float = 0.30      # axial clearance, lug top to channel ceiling
     fit_lug_t: float = 4.0       # angular clearance each side in the entry slot
@@ -102,12 +110,18 @@ class Params:
     oring_squeeze: float = 0.22  # fraction of CS compressed
 
     # --- Assembly -----------------------------------------------------------
-    head_gap: float = 0.60       # ceiling clearance over the PCB, foam-filled
-    # Foam is a RING, not a disc: the middle stays clear so the PCB's LED can
-    # be read through the transparent cap.
-    foam_od: float = 25.0
-    foam_id: float = 16.0
-    foam_t: float = 1.00
+    # The ceiling stays where revision A put it (holder 4.0 + the caliper's
+    # 2.0 board + 0.6), because that pair closed over a real board. With the
+    # STEP's 0.81 board and 1.60 switch the true head gap over S1 is 0.19.
+    ceiling_h: float = 6.60
+    # Foam is a RING, not a disc, and it sits inboard (r 6-8), under the
+    # opaque core and clear of both the switch (r <= 2.26) and the LED
+    # (r 8.78-10.91). The rim ring it replaces landed on the LED. 2.0 mm
+    # because the board face is 1.79 below the ceiling; the ring bears on the
+    # parts in its band (0.5-1.1 mm) and just kisses bare board.
+    foam_od: float = 16.0
+    foam_id: float = 12.0
+    foam_t: float = 2.00
     fit_seal_r: float = 0.10     # slide clearance, cap bore over the seal band
 
     # --- Cell pocket --------------------------------------------------------
@@ -139,8 +153,23 @@ class Params:
         return self.r_pcb - self.r_holder
 
     @property
+    def pcb_env_h(self) -> float:
+        """Board plus its tallest part."""
+        return self.pcb_t + self.comp_h
+
+    @property
     def stack_h(self) -> float:
         return self.pcb_env_h + self.holder_h
+
+    @property
+    def head_gap(self) -> float:
+        """Ceiling clearance over the switch, the tallest part."""
+        return self.ceiling_h - self.stack_h
+
+    @property
+    def foam_gap(self) -> float:
+        """Ceiling down to the bare board face under the foam ring."""
+        return self.ceiling_h - self.holder_h - self.pcb_t
 
     # --- Radial stations ----------------------------------------------------
     @property
@@ -177,7 +206,13 @@ class Params:
 
     @property
     def groove_w(self) -> float:
+        """Axial width at the root, where the ring sits."""
         return self.oring_cs * 1.35
+
+    @property
+    def groove_rise(self) -> float:
+        """Axial run of the groove's lower cone, bore to root."""
+        return self.chamfer_rise(self.r_groove_root - self.r_cap_seal_bore)
 
     @property
     def r_cap_out(self) -> float:
@@ -240,7 +275,7 @@ class Params:
 
     @property
     def z_ceiling(self) -> float:
-        return self.stack_h + self.head_gap
+        return self.ceiling_h
 
     @property
     def z_body_rim(self) -> float:
@@ -342,14 +377,16 @@ def helical_sector(profile_rz: list[tuple[float, float]], r_ref: float,
 def body_lugs(p: Params) -> bd.Solid:
     """Bayonet lugs on the seal band.
 
-    Underside: a flat of bear_w next to the band (the one flat overhang, one
-    extrusion width), then a chamfer steeper than 45 deg out to the crest. The
-    underside follows the cap's ramp helix so the two flats mate face to face;
-    the top is cut flat afterwards, it carries nothing.
+    Underside: a cone at chamfer_deg from the cap's bore radius out to the
+    crest -- no flat, so nothing for the slicer to support. It lies on the
+    same cone as the cap's lip tops and follows the ramp helix, so the two
+    mate face to face. The 0.10 mm under the bore radius is flat but sits
+    against the band. The top is cut flat afterwards, it carries nothing.
     """
-    rise = p.chamfer_rise(p.r_lug - (p.r_core + p.bear_w))
+    r_bear = p.r_cap_seal_bore
+    rise = p.chamfer_rise(p.r_lug - r_bear)
     over = p.lug_h + p.cam_rate * p.lug_arc + 0.5      # trimmed flat below
-    prof = [(p.r_core - 0.30, 0.0), (p.r_core + p.bear_w, 0.0),
+    prof = [(p.r_core - 0.30, 0.0), (r_bear, 0.0),
             (p.r_lug, rise), (p.r_lug, over), (p.r_core - 0.30, over)]
     lugs = None
     for i in range(p.lug_n):
@@ -369,15 +406,14 @@ def cap_channels(p: Params) -> tuple[bd.Solid, bd.Solid]:
     skirt's open end to z_chan_hi; the circumferential leg runs from the slot
     to the end wall at a - cam_lock + chan_end. Under the leg sits the lip, a
     helical ramp rising cam_rate per degree, parallel to the lug undersides.
-    Its top is a flat of bear_w at the bore, then a chamfer steeper than
-    45 deg up to the channel root -- once the cap is flipped for printing
-    that flat is the only overhang, and it is one extrusion width.
+    Its top is a cone at chamfer_deg from the bore up to the channel root,
+    the lug undersides' cone -- once the cap is flipped for printing it
+    overhangs at 50 deg and needs no support.
     """
     r_in = p.r_cap_seal_bore
     r_out = p.r_cap_chan + 0.05          # embeds into the wall: no coincident face
-    rise = p.chamfer_rise(r_out - (r_in + p.bear_w))
-    prof = [(r_in, -1.0), (r_out, -1.0), (r_out, rise),
-            (r_in + p.bear_w, 0.0), (r_in, 0.0)]
+    rise = p.chamfer_rise(r_out - r_in)
+    prof = [(r_in, -1.0), (r_out, -1.0), (r_out, rise), (r_in, 0.0)]
     cut = lips = None
     for i in range(p.lug_n):
         e = p.lug_angle(i) - p.cam_lock
@@ -481,8 +517,17 @@ def cap_skirt(p: Params, z_top: float) -> bd.Solid:
     skirt = (skirt - cut) + lips
     # The lips were swept from below the open end; trim them flush with it.
     skirt -= cyl(p.r_cap_out + 1, 3, z=z0 - 3)
-    # Radial O-ring groove, above the channels.
-    skirt -= ring(p.r_groove_root, p.r_cap_seal_bore, p.groove_w, z=p.z_groove_lo)
+    # Radial O-ring groove, above the channels. The ring sits on the root,
+    # groove_w wide; the lower flank is a cone, not a flat, because printed
+    # top-plate-down that flank faces the bed -- a flat one is a 1.07 mm
+    # ledge the slicer supports. The cone may open into the channels' tops.
+    lo, r_b = p.z_groove_lo, p.r_cap_seal_bore - 0.05
+    groove = bd.revolve(bd.make_face(bd.Polyline(
+        (r_b, 0, lo - p.groove_rise * (p.r_groove_root - r_b)
+         / (p.r_groove_root - p.r_cap_seal_bore)),
+        (p.r_groove_root, 0, lo), (p.r_groove_root, 0, lo + p.groove_w),
+        (r_b, 0, lo + p.groove_w), close=True)), bd.Axis.Z)
+    skirt -= groove
     return skirt
 
 
@@ -491,8 +536,8 @@ def build_cap(p: Params = P, foam_gap: tuple[float, float] | None = None,
     """Bayonet cap: L-channels low, O-ring groove high, grip scallops.
 
     foam=(od, id) overrides the foam ring the ceiling recess is cut for; the
-    default is the rim ring in Params. A cap with a clear ring window over the
-    LED radius needs the foam moved inboard, or it sits on the LED.
+    default is the inboard ring in Params. A rim ring (r 8-12.5) would sit on
+    the LED, which the STEP puts at r 8.78-10.91.
 
     foam_gap=(theta_deg, span_deg) leaves the recess open over that angular
     sector instead, for a cap with a local window. Angles are from +X,
@@ -554,7 +599,8 @@ def main() -> None:
     print(f"  orientation        holder DOWN (z 0-{p.holder_h:.1f}), "
           f"PCB UP (z {p.z_pcb_bottom:.1f}-{p.z_pcb_top:.1f}), LED outward")
     print(f"  board stack        {p.stack_h:.2f} mm  "
-          f"(holder {p.holder_h} + PCB {p.pcb_env_h})   UNVERIFIED")
+          f"(holder {p.holder_h} UNVERIFIED + PCB {p.pcb_t} + S1 {p.comp_h}, STEP)")
+    print(f"  ceiling            z {p.z_ceiling:.2f}, {p.head_gap:.2f} mm over S1")
     print(f"  holder offset      {p.holder_offset:.2f} mm  internally tangent")
     print(f"  cell pocket        r {p.r_pocket:.2f} mm, fill to z {p.z_fill_top:.2f}")
     print(f"  cavity radius      {p.r_cav:.2f} mm  (board {p.r_pcb} + {p.fit_board})")
@@ -572,7 +618,7 @@ def main() -> None:
     print(f"  O-RING TO SOURCE   ID {p.oring_id_target():.2f} x CS {p.oring_cs} mm"
           f"  -> {p.actual_squeeze() * 100:.0f}% squeeze")
     print(f"  FOAM RING TO MAKE  OD {p.foam_od:.0f} x ID {p.foam_id:.0f} x "
-          f"{p.foam_t:.1f} mm closed-cell, over a {p.head_gap:.2f} mm gap")
+          f"{p.foam_t:.1f} mm closed-cell, over a {p.foam_gap:.2f} mm gap to the board")
 
     print("\nbuilding...")
     parts = {"body": build_body(p), "cap": build_cap(p)}
@@ -589,13 +635,13 @@ def main() -> None:
         print(f"{name:14} {str(solid.is_valid):>6} {solid.volume:9.1f} mm3 "
               f"{m:6.2f} g   {b.size.X:.1f} x {b.size.Y:.1f} x {b.size.Z:.1f}")
 
-    pcb_m = math.pi * p.r_pcb ** 2 * p.pcb_env_h * 1.90e-3
+    pcb_m = brd.PCB_MASS + brd.PARTS_MASS
     payload = pcb_m + 3.0 + 0.6 + 0.4
     total = printed + payload
     print("-" * 74)
     print(f"  printed plastic    {printed:6.2f} g")
     print(f"  payload            {payload:6.2f} g  (PCB {pcb_m:.2f} + cell 3.00 "
-          f"+ holder 0.60 + ring 0.40, last two ESTIMATED)")
+          f"+ holder 0.60 + ring 0.40; parts, holder, ring ESTIMATED)")
     verdict = "within" if total <= 10 else f"OVER by {total - 10:.2f} g"
     print(f"  ASSEMBLED TOTAL    {total:6.2f} g   {verdict} the 10 g target")
 

@@ -1,0 +1,57 @@
+import { useMemo, useState } from 'react';
+import { RealChickenShell } from '@chirpcoop/real-chicken-ui/components';
+
+import { CapEditor } from './cap-editor/cap-editor.js';
+import catalog from './cap-editor/data/catalog.json';
+import layout from './cap-editor/data/layout.json';
+import { createMockClient } from './cap-editor/mock-client.js';
+import { defaultColours, type CapDesign } from './cap-editor/types.js';
+import { en } from './copy/en.js';
+import { hu } from './copy/hu.js';
+import { asShellCopy } from './copy/types.js';
+import proofSample from './assets/proof-sample.svg?inline';
+
+// Demo harness only: three hens in different states, one shared wallet, a
+// locale toggle. In chirp the (patron) page supplies the SDK client, the
+// hen from the route and the copy from useLocale().
+const dc = defaultColours(catalog);
+const HENS: CapDesign[] = [
+  { henId: 'h67', serial: 67, scheme: 'pasture', icon: 'heart', centre: null, band: null, colours: dc, status: 'draft', designHash: '', proofUrl: null },
+  { henId: 'h8', serial: 8, scheme: 'bluedye', icon: null, centre: 'rings', band: 'dots', colours: { ring: 'a', number: 'base', disc: 'b', centre: 'a', band: 'b' }, status: 'locked', designHash: 'd6d6ead0fc97b830', proofUrl: null },
+  { henId: 'h12345', serial: 12345, scheme: 'gold', icon: 'skull', centre: null, band: 'barcode', colours: dc, status: 'installed', designHash: '', proofUrl: proofSample },
+];
+
+export function Page() {
+  const [lang, setLang] = useState<'hu' | 'en'>('hu');
+  const [henId, setHenId] = useState(HENS[0].henId);
+  const client = useMemo(() => createMockClient({ hens: HENS, balance: 1000n, catalog }), []);
+  const copy = lang === 'hu' ? hu : en;
+  const locale = lang === 'hu' ? 'hu-HU' : 'en-US';
+  return (
+    <RealChickenShell copy={asShellCopy(copy.shell)} showHero={false}>
+      <div className="rc-cap-demo-bar">
+        <div className="rc-cap-demo-bar__group" role="group" aria-label="hen">
+          {HENS.map((h) => (
+            <button
+              key={h.henId}
+              type="button"
+              className="rc-cap-btn rc-cap-btn--ghost"
+              aria-pressed={h.henId === henId}
+              onClick={() => setHenId(h.henId)}
+            >
+              #{h.serial}
+            </button>
+          ))}
+        </div>
+        <div className="rc-cap-demo-bar__group" role="group" aria-label="language">
+          {(['hu', 'en'] as const).map((l) => (
+            <button key={l} type="button" className="rc-cap-btn rc-cap-btn--ghost" aria-pressed={l === lang} onClick={() => setLang(l)}>
+              {l.toUpperCase()}
+            </button>
+          ))}
+        </div>
+      </div>
+      <CapEditor henId={henId} client={client} catalog={catalog} layout={layout} copy={copy.capEditor} walletCopy={copy.wallet} locale={locale} />
+    </RealChickenShell>
+  );
+}

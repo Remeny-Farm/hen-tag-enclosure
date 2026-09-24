@@ -43,6 +43,38 @@ full material and welfare-adjacent requirements this design has to satisfy.
   labeling, so outside contributors have a real basis to trust and extend the
   design. See [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
+## Per-hen cap customisation
+
+Patrons choose a colour scheme, an icon or a centre pattern and a top-band
+pattern for their hen's cap in the app and lock the design; staff batch one
+scheme's locked caps onto one printer plate. Design and requirements:
+[`docs/superpowers/specs/2026-09-14-hen-cap-customisation-design.md`](docs/superpowers/specs/2026-09-14-hen-cap-customisation-design.md).
+
+```sh
+cd cad
+uv run --python 3.12 cap_marking.py 67 --icon sun --band dots     # one cap with a band pattern
+uv run --python 3.12 cap_batch.py fixtures/batch_sample.json       # batch JSON -> plate + manifest + proofs
+cd ../editor && pnpm install && pnpm dev                            # the patron editor prototype
+```
+
+- [`cad/catalog.json`](cad/catalog.json) is the source of truth for the
+  colour schemes (base + two free colours, Prusament Clear window; five on
+  offer since 2026-09-18, three retired ones kept printable for designs
+  already locked on them), the packs (basic free, vibe 50, drop 300–1000
+  limited, priced per item), 34 icons, 16 patterns, the five colour zones
+  (a translucent filament may not go on the opaque ring or number) and the
+  fees; the app ships an identical copy.
+  [`cad/cap_motifs.py`](cad/cap_motifs.py) holds every motif as parametric
+  geometry, [`cad/check_motifs.py`](cad/check_motifs.py) proves them printable.
+- [`cad/cap_batch.py`](cad/cap_batch.py) turns the admin's batch JSON into
+  `plate_<batch>_P1S.3mf` (6 × 6, up to 36 caps, AMS 1 clear / 2 text /
+  3 accent, print settings baked in), a manifest and a proof SVG per cap.
+  A 36-cap plate slices to 36 objects in an estimated 4 h 13 m
+  ([lab note](docs/lab/2026-09-14-cap-batch-plate.md)); **no plate has been
+  printed yet.**
+- [`editor/`](editor/) is the drop-in patron editor built with chirp's own
+  UI package; see its README for how it maps into the chirp repository.
+
 ## Repository structure
 
 | Path | Contents |
@@ -50,7 +82,8 @@ full material and welfare-adjacent requirements this design has to satisfy.
 | [`DESIGN.md`](DESIGN.md) | Full mechanical design spec: decisions, verification results, print settings, open questions. |
 | [`docs/requirements.md`](docs/requirements.md) | Source-of-truth requirements: materials, sealing/ingress target, conformal-coating protocol, form factor. |
 | [`docs/lab/`](docs/lab/) | Dated lab notes: physical measurements, print trials, photo-based findings. |
-| [`cad/`](cad/) | Parametric build123d source, the per-tag cap generator, the verification script, and the test suite. |
+| [`cad/`](cad/) | Parametric build123d source, the per-tag cap generator, the batch CLI and plate writer, the verification scripts, and the test suites. |
+| [`editor/`](editor/) | Patron cap-editor prototype (React, chirp UI package), browser-testable, drop-in for chirp. |
 | [`cad/out/`](cad/out/) | Exported STL/STEP. Stable printables (body, cap, fit coupons) are committed; per-tag and debugging outputs are gitignored — see `cad/out/.gitignore`. |
 | [`platform/`](platform/) | Accessory-platform **proposal**: keeper collar, bayonet interface spec, saddle integration. Not yet built. |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | How to contribute: environment, verification requirements, lab-note style, accessory safety envelope. |
@@ -68,7 +101,7 @@ cd cad
 # Build the enclosure and export STEP + STL to out/
 uv run --python 3.12 hen_tag_enclosure.py
 
-# 38 machine checks (interference, fit, bayonet, wall thickness, seal, harness) + half sections
+# 39 machine checks (interference, fit, bayonet, wall thickness, seal, harness) + half sections
 uv run --python 3.12 verify.py
 
 # Generate one hen's cap: id, optional message, icon
@@ -132,7 +165,7 @@ Full rationale, tolerances and the slicer verification log are in
 
 ## Status
 
-**v1 is Revision C geometry.** It is machine-verified — 38 checks in
+**v1 is Revision C geometry.** It is machine-verified — 39 checks in
 `cad/verify.py`, all passing — but that is a claim about the model, not about
 a worn device:
 

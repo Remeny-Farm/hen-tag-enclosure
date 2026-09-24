@@ -26,8 +26,8 @@ Parametric two-part enclosure for the Holyiot 25008 tag, generated from code in
 | | |
 |---|---|
 | Assembled envelope | **40.14 × 31.94 × 8.70 mm** (Ø31.94 body, tabs to 40.14) |
-| Printed mass (PETG) | **5.07 g** (body 2.71 + cap 2.36) |
-| Assembled mass | **10.94 g** — 0.94 g over the 10 g target |
+| Printed mass (PETG) | **5.01 g** (body 2.71 + cap 2.30) |
+| Assembled mass | **9.92 g** — within the 10 g target (board mass from the manufacturer STEP; cell, holder and ring still estimates) |
 | Orientation | Holder **down** toward the harness, PCB **up**, LED outward |
 | Sealing | Radial NBR O-ring, **ID 26.74 × CS 1.50 mm** |
 | Closure | Bayonet: 3 lugs × 20°, 0.80 mm proud, 30° clockwise onto self-locking helical ramps |
@@ -38,12 +38,12 @@ Parametric two-part enclosure for the Holyiot 25008 tag, generated from code in
               ┌──────────────────────────────┐   cap top 1.10
               │ ▁▁▁  Ø16 LED window  ▁▁▁     │   foam recess 0.30
          ═════╪══════════════════════════════╪═════  ceiling z=6.60
-              │ ░░░           ░░░            │   foam RING OD25/ID16 x 1.0
-              │ ▓▓▓▓▓▓▓ PCB Ø25 ▓▓▓▓▓▓▓ z=6.0│   ← LED faces the cap
+              │      ░░░   S1   ░░░          │   foam RING OD16/ID12 x 2.0
+              │ ▓▓▓▓▓ PCB Ø25 ▓▓▓▓▓ z=4.81/6.41│   ← LED faces the cap
          ○────┤ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ z=4.0 ├────○  O-ring, z=3.71…5.74
               │███┌──────────────────┐███████│   seals on band r=13.70
               │███│ CR2032 + holder  │███████│   ███ = fill, holds the holder
-    ▓▓▓▓▓▓▓▓▓▓╪███│ Ø21, offset 2.0  │███████╪▓▓▓▓▓▓▓▓  3 lugs z=1.80…2.80
+    ▓▓▓▓▓▓▓▓▓▓╪███│ Ø21, offset 2.0  │███████╪▓▓▓▓▓▓▓▓  3 lugs z=1.80…3.10
     ┌─────┐   │▁▁▁└──────────────────┘▁▁▁▁▁▁▁│   ┌─────┐  floor 1.00
     │  ▄  │═══╡        cell rests on the floor  ╞═══│  ▄  │  ← in-plane tabs
     └─────┘   └──────────────────────────────┘   └─────┘     slot 8.8 x 1.8
@@ -86,7 +86,7 @@ sealing band at r 14.30 is a collision. Caught by `verify.py`, not by eye.
 Inverting it fixes the assembly path and adds a second benefit: **the O-ring
 never travels across the closure**, which would shred it. The rule survived
 the change from thread to bayonet (decision 9) unchanged: the lugs sit at
-z 1.80–2.80, the groove starts at z 3.76, and the checks that enforce it are
+z 1.80–3.10, the groove starts at z 3.91, and the checks that enforce it are
 `cap bore clears the seal band` and `O-ring never crosses the lugs` in
 `verify.py`.
 
@@ -111,20 +111,28 @@ by the cavity wall itself.
 
 The fill deliberately stops 0.20 mm **short** of the PCB rather than seating it.
 The board still rests on its own holder, and the fill never touches whatever
-components sit on that face — which are not known. It costs about 0.7 g.
+components sit on that face (the STEP's generic clip model does not show them
+reliably). It costs about 0.7 g.
 
 ### 5. Tolerance lives in a foam ring, not a pad
 
-A 1.0 mm closed-cell foam **ring**, OD 25 × ID 16, in an annular recess in the
-cap ceiling. It presses the PCB rim and tolerates stack heights from about 5.2
-to 6.6 mm, so a wrong reading of the height ambiguity is fixed by changing foam,
-not by reprinting.
+A 2.0 mm closed-cell foam **ring**, OD 16 × ID 12, against the cap ceiling.
+It bears on the board's r 6–8 zone: on the parts there (0.5–1.1 mm, Q1 at
+worst, 66 % local squeeze) and just on bare board (11 %). Holder heights from
+3.79 mm (foam leaves bare board) to 4.19 mm (the ceiling reaches S1) assemble,
+so a wrong holder reading is fixed by changing foam, not by reprinting.
 
-Ring rather than disc because a disc would cover the LED. The Ø16 centre stays
-open as a viewing window.
+**Geometry from the manufacturer STEP (2026-09-23).** The rev A ring was OD 25 ×
+ID 16 × 1.0 over a 2.0 mm "board", both from a caliper. The Holyiot STEP
+(`cad/board_holyiot_25008.py`) showed the board is **0.81 mm** with parts up
+to **1.60 mm** (the tactile switch S1, dead centre), so the old ring hung
+1.1 mm above the board face and held nothing, and its r 8–12.5 band sat
+**right on the LED** (r 8.78–10.91). The ring moved inboard, under the opaque
+core, and doubled in thickness. The ceiling did not move: z 6.60 closed over a
+real board on revision A, and leaves **0.19 mm over S1**.
 
-> The LED's position on the PCB is unknown. If it turns out to sit under the
-> ring rather than in the window, replace the ring with three foam pads at 120°.
+Ring rather than disc: the switch sits inside the ID. A cap pressing S1 is the
+failure to watch for if the holder turns out taller than 4.0 mm.
 
 ### 6. Battery retention comes free
 
@@ -180,8 +188,8 @@ against the plate: the outer face is one smooth plane, the id reads correctly
 from outside, and the window is flush on both faces. The marking never reaches
 the cavity (0.46 mm of shell above it); the window does, which is the point.
 
-**Why a ring.** The LED centre is 2.5 mm in from the board edge (operator
-caliper), i.e. r = 10.0. Its *angle* relative to the cap is not controlled —
+**Why a ring.** The LED centre sits at r 9.84 (manufacturer STEP; the caliper
+said 10.0), at −60° in the body frame. Its *angle* relative to the cap is not controlled —
 the board can turn a few degrees in its pocket, and the cap's stop angle
 carried print tolerance at 360° per millimetre of thread pitch (the bayonet
 ramp brings that down to about 4° per 0.05 mm, decision 9) — so a local window
@@ -224,6 +232,17 @@ is inside the ID.
 
 `--no-window` reproduces the earlier two-body transparent cap.
 
+### 10. Per-hen customisation: patterns, catalog, batch plates
+
+Patrons choose a colour scheme (text + accent filament over the clear shell),
+an icon *or* a centre pattern, and a top-band pattern; the serial number is
+always on the cap. Everything a patron may choose is in `cad/catalog.json`,
+mirrored in the app. Locked designs are batched one scheme per plate, 6 × 6
+on the P1S, by `cad/cap_batch.py`; a 36-cap plate slices to 36 objects in an
+estimated 4 h 13 m (`docs/lab/2026-09-14-cap-batch-plate.md`, **no plate
+printed yet**). Design, constraints and the chirp-side requirements:
+`docs/superpowers/specs/2026-09-14-hen-cap-customisation-design.md`.
+
 ### 9. Bayonet, not a thread
 
 Revisions A/B closed with a Tr28.6 × 1.0 trapezoidal thread. One pair printed
@@ -239,14 +258,18 @@ operator reported the flanks as "too steep". Computed from the revision B
 | cap ridge root width | 0.35 mm | the whole ridge is thinner than one extrusion at its base |
 
 The replacement is a three-lug bayonet, sized so that on **both** parts, in
-their print orientations, the only flat overhang is one extrusion width:
+their print orientations, nothing needs support. (Revision D, 2026-09-24:
+the bearing faces were a 0.50 mm flat plus a 50° chamfer, and the flat under
+each cap lip -- plus the 1.07 mm flat lower flank of the O-ring groove -- drew
+slicer support. Both are now pure 50° cones; with support enabled Bambu
+Studio generates none, on any of the four parts.)
 
 | | Body | Cap |
 |---|---|---|
-| Feature | 3 lugs on the seal band, 20° × 0.80 mm proud, z 1.80–2.80 | 3 L-channels: 28° entry slot at the skirt's open end, then a 51° leg under a ceiling at z 3.10 |
-| Bearing face | underside: 0.50 mm flat next to the band, then a 50° chamfer to the crest | lip top: 0.50 mm flat at the bore, then a 50° chamfer to the channel root |
-| Overhang when printed | the 0.50 mm flat (body prints upright) | the 0.50 mm flat (cap prints top-plate-down, the lips hang from the skirt) |
-| Load path | lug sheared at its root, 3 × 4.8 × 0.8 mm | lip in bending, 1.4–2.0 mm thick; 5.8 mm² flat-on-flat contact |
+| Feature | 3 lugs on the seal band, 20° × 0.80 mm proud, z 1.80–3.10 | 3 L-channels: 28° entry slot at the skirt's open end, then a 51° leg under a ceiling at z 3.40 |
+| Bearing face | underside: a 50° cone from the bore radius to the crest (0.10 mm flat against the band) | lip top: the same 50° cone, bore to channel root |
+| Overhang when printed | 50°, self-supporting (body prints upright) | 50°, self-supporting (cap prints top-plate-down, the lips hang from the skirt) |
+| Load path | lug sheared at its root, 3 × 4.8 × 0.8 mm | lip in bending, 1.4–2.0 mm thick; 10.4 mm² projected cone-on-cone contact |
 
 Both bearing faces are **helical at the same pitch** (12 µm per degree of cap
 rotation, 2.7° helix angle), so they meet face to face rather than edge on
@@ -279,7 +302,7 @@ That angle re-tunes `cam_lock`.
 | Item | Spec | Status |
 |---|---|---|
 | O-ring | NBR, **ID 26.74 × CS 1.50 mm**, closest stock size | to source |
-| Foam ring | closed-cell PE/EVA, adhesive backed, 1.0 mm: **OD 25 × ID 16** for a transparent cap, **OD 16 × ID 12** for a ring-window cap (the rim is the LED radius) | to source or punch |
+| Foam ring | closed-cell PE/EVA, adhesive backed, **2.0 mm, OD 16 × ID 12** — a rim ring would sit on the LED | to source or punch |
 | Clear PETG | third filament for the LED window; the cap shell and id are now opaque colours | per print |
 | Elastic | 8 mm figure-eight harness | cross-section UNVERIFIED |
 | Conformal coating | acrylic, per `docs/requirements.md` masking rules | unchanged |
@@ -353,11 +376,12 @@ regenerate; do not file the parts.
 2. Seat the CR2032 in the holder, sliding it in at the tangent edge.
 3. Drop the board into the body cavity **holder first, PCB facing up**. The
    holder should drop into its pocket with about 0.25 mm of play, and the PCB
-   should end up roughly 0.6 mm below the cap ceiling.
+   face should end up about 1.8 mm below the cap ceiling (0.19 mm over the
+   centre switch).
    - Check the LED is facing you. If the PCB is against the floor, the board is
      upside down and the LED will be pointed at the bird.
-4. Stick the OD 25 × ID 16 × 1.0 mm foam ring into the cap's annular ceiling
-   recess, leaving the centre window open.
+4. Stick the OD 16 × ID 12 × 2.0 mm foam ring centred on the cap ceiling,
+   under the core disc; the centre switch stays inside its hole.
 5. Fit the O-ring into the cap's internal groove.
 6. Turn the cap about 30° anticlockwise from its final position so the entry
    slots sit over the three lugs, press it straight down over the seal band
@@ -370,7 +394,7 @@ regenerate; do not file the parts.
 
 ## Verification Performed
 
-`cad/verify.py`, 38 machine checks, all passing. Notable ones:
+`cad/verify.py`, 39 machine checks (48 with `--board-step`), all passing. Notable ones:
 
 - body/cap collision: **0.000 mm³** at the assembled position
 - board vs. enclosure interference: **0.0000 mm³**
@@ -379,11 +403,12 @@ regenerate; do not file the parts.
 - clearance at the tangent point: **0.30 mm**
 - cap drops on at the entry angle and the lugs run free for 0–28°: **0.000 mm³**
   overlap at every step
-- ramp wedges past the lock angle: **0.296 mm³** interference at +4°, the cap tightens
-- locked cap retained: **5.77 mm³** lug/lip overlap when lifted 0.6 mm; at the
+- ramp wedges past the lock angle: **0.498 mm³** interference at +4°, the cap tightens
+- locked cap retained: **6.08 mm³** lug/lip overlap when lifted 0.6 mm; at the
   entry angle it lifts off clean
 - cap bore clears the seal band: +0.10 mm (the rule that caught decision 2)
-- O-ring never crosses the lugs: groove starts z 3.76, channels end z 3.10
+- O-ring never crosses the lugs: groove starts z 3.91, channels end z 3.40
+- slicer support with support enabled: **none** on body, cap and both coupons (Bambu Studio CLI)
 - O-ring squeeze: **22 %** (static radial target is 15–30 %)
 - thinnest wall: **0.80 mm** under the grip scallops
 - 8.0 mm elastic threads the tab slot: **0.000 mm³** obstructing
@@ -450,12 +475,18 @@ has touched it, no elastic has loaded a tab, and no hen has worn it.
   diameters and matches the operator's description.
 - The mass comparison between sealing strategies is computed from real solids,
   not estimated.
+- **Board and parts from the manufacturer STEP** (`HOLYIOT-25008-V1.0.step`,
+  2026-09-23): Ø25.00 × 0.81 board, S1 1.60 tall at the centre, LED at r 9.84 /
+  −60°, nothing beyond r 11.77. `verify.py --board-step PATH` re-extracts
+  the numbers and collides the real board with body and cap (0.0000 mm³).
+  The STEP's battery clip is a generic model (it leaves 2.39 mm for a 3.2 mm
+  cell) and is ignored.
 
 ### Assumed (UNVERIFIED)
 
-- Board stack of 6.0 mm (Reading A of the ambiguity).
-- PCB Ø25 × 2 mm, holder Ø21 × 4 mm.
-- Holder mass 0.6 g and O-ring mass 0.4 g, both estimates that the 10 g budget
+- Holder Ø21 × 4.0 mm (caliper). Board stack 6.41 mm follows from it; the
+  ceiling tolerates a holder of 3.79–4.19 mm.
+- Board part mass 0.18 g (volume at an assumed 2.5 g/cm³); holder mass 0.6 g and O-ring mass 0.4 g, both estimates that the 10 g budget
   argument depends on.
 - Elastic cross-section fitting an 8.6 × 2.0 mm channel.
 - The bayonet fit: `fit_lug_r` 0.15, `fit_lug_z` 0.30, lock-up at 30°. Modelled,
@@ -463,7 +494,10 @@ has touched it, no elastic has loaded a tab, and no hen has worn it.
 
 ### Unknown
 
-- Antenna location. No keep-out was designed because none could be grounded.
+- Antenna location. Probably a printed antenna: the matching network
+  (L3/L4/C8–C13) sits beside the radio at 115–136°, and the rim from 141° to
+  290° carries no parts. The STEP has no copper, so this stays unconfirmed; the
+  enclosure puts no metal anywhere near the board.
 
 ---
 
