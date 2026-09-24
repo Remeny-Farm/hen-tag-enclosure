@@ -72,8 +72,8 @@ OPEN_AIR = {
 }
 # Travels across open air with the recommended settings, 2026-09-10, plus margin.
 LIMIT = {"cap": 40, "coupon_cap": 12, "body": 100, "coupon_body": 20}
-# max_cantilever_dist: the groove ceiling on the cap parts, nothing on the body.
-CANTILEVER_LIMIT = {"cap": 70000, "coupon_cap": 70000, "body": 0, "coupon_body": 0}
+# max_cantilever_dist: 0 everywhere since revision D coned the groove and lips.
+CANTILEVER_LIMIT = {"cap": 0, "coupon_cap": 0, "body": 0, "coupon_body": 0}
 
 
 def flatten(name: str) -> dict:

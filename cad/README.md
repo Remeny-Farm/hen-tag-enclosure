@@ -13,7 +13,7 @@ first run. No virtualenv, and nothing is installed into the repository.
 
 ```sh
 uv run --python 3.12 hen_tag_enclosure.py   # build + export to out/
-uv run --python 3.12 verify.py              # 38 machine checks + half sections
+uv run --python 3.12 verify.py              # 39 machine checks + half sections (+9 with --board-step)
 uv run --python 3.12 slice_check.py         # real-slicer check, needs Bambu Studio
 ```
 
@@ -142,12 +142,11 @@ one input propagates correctly instead of leaving stale constants behind.
 The values most likely to need correcting, all currently UNVERIFIED:
 
 ```python
-pcb_env_h  = 2.0    # full board envelope; see the height ambiguity in the lab note
-holder_h   = 4.0    # holder + seated cell, off the PCB face
+holder_h   = 4.0    # holder + seated cell, off the PCB face (board itself: STEP)
 oring_cs   = 1.50   # measure the ring you actually have
 strap_w    = 8.80   # slot length; measure the elastic you actually have
 strap_t    = 1.80   # slot width, along the spine
-foam_id    = 16.0   # LED window through the foam ring
+foam_t     = 2.0    # foam ring over a 1.79 mm gap to the board face
 ```
 
 Board orientation is **holder down, PCB up** — the LED has to look out through

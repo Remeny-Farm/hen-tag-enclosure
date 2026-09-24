@@ -48,6 +48,7 @@ from pathlib import Path
 import build123d as bd
 
 sys.path.insert(0, str(Path(__file__).parent))
+import board_holyiot_25008 as brd  # noqa: E402
 from hen_tag_enclosure import OUT, P, PETG_DENSITY, build_cap  # noqa: E402
 from cap_design import COLOUR_ROLES, ZONES, default_colours, load_catalog  # noqa: E402
 from cap_motifs import (  # noqa: E402
@@ -86,13 +87,17 @@ GAP_MIN = 1.0          # opaque wall between the marking and the clear ring
 # and rotation-independence comes free. A print trial killed the previous
 # opaque-shell + clear-ring layout: at the 2.9 mm band the lettering was
 # unreadable, and the customer look wanted a clear body anyway.
-LED_R = 10.0           # LED centre 2.5 mm in from the Ø25 edge; operator caliper
+LED_R = brd.LED_R      # LED centre r 9.84, manufacturer STEP (caliper said 10.0)
 # The clear window: an annulus through the whole top plate of an otherwise
 # base-coloured shell. The LED can land anywhere in it, so it stays free of
 # every inlay; the number sits entirely outside it (BAND_R_MIN below).
 LED_RING = (8.5, 11.5)
 WINDOW_MARGIN = 0.10
-FOAM_INNER = (16.0, 12.0)   # foam ring kept inboard, off the LED radius
+FOAM_INNER = (P.foam_od, P.foam_id)   # foam ring kept inboard, off the LED radius
+# Worst-case radial reach of the LED emitting package: board play in the
+# cavity plus cap concentricity on the seal bore.
+LED_PLAY = P.fit_board + P.fit_seal_r
+LED_HALF_REACH = LED_PLAY + 0.5   # + half the ~1.0 mm lens of the 1.6 x 1.5 package
 
 # --- accent core (third colour) ---------------------------------------------
 # A full disc, not a ring: the accent colour fills the centre right up to the
@@ -808,6 +813,10 @@ def main() -> None:
         check(pattern_gap_ok(sk_), f"{label} gaps printable",
               f">= {PATTERN_GAP_MIN} mm between islands")
     clear = led_ring_clear_fraction(*[x for x in (sk["marking"], sk["centre"], sk["band"]) if x is not None])
+    led_lo, led_hi = LED_R - LED_HALF_REACH, LED_R + LED_HALF_REACH
+    check(LED_RING[0] <= led_lo and led_hi <= LED_RING[1], "LED lands inside the window",
+          f"LED r {led_lo:.2f}..{led_hi:.2f} (centre {LED_R} +- {LED_HALF_REACH:.2f}) "
+          f"in r {LED_RING[0]}..{LED_RING[1]}")
     check(clear >= 0.999, "LED window stays clear", f"{clear * 100:.0f}% of r {LED_RING[0]}-{LED_RING[1]} open")
     check(True, "zone colours", ", ".join(f"{z}={colours[z]}" for z in ZONES) + f"  scheme {scheme['id']}")
 

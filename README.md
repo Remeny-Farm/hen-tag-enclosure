@@ -101,7 +101,7 @@ cd cad
 # Build the enclosure and export STEP + STL to out/
 uv run --python 3.12 hen_tag_enclosure.py
 
-# 38 machine checks (interference, fit, bayonet, wall thickness, seal, harness) + half sections
+# 39 machine checks (interference, fit, bayonet, wall thickness, seal, harness) + half sections
 uv run --python 3.12 verify.py
 
 # Generate one hen's cap: id, optional message, icon
@@ -165,7 +165,7 @@ Full rationale, tolerances and the slicer verification log are in
 
 ## Status
 
-**v1 is Revision C geometry.** It is machine-verified — 38 checks in
+**v1 is Revision C geometry.** It is machine-verified — 39 checks in
 `cad/verify.py`, all passing — but that is a claim about the model, not about
 a worn device:
 
