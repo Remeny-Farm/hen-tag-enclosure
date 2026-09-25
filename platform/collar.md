@@ -124,3 +124,33 @@ Everything. Specifically: skirt OD as-printed (design 31.94; Rev A printed
 thread was confirmed, skirt OD was not measured), scallop depth as-printed,
 cap break-loose torque, tab shear under torque, PETG clamp relaxation over
 weeks outdoors, RF effect (antenna unknown).
+
+## Full collar, bench prototype v1 (2026-09-25)
+
+`../cad/collar_full.py` builds the whole collar: two clamshell halves
+(`collar_half_a`, `collar_half_b`) plus a demo accessory (`halo_accessory`).
+Machine checks: 0.000 mm³ interference against `body_platform`, the cap, each
+other, and the halo at both entry and seated positions. The lowest collar point
+is 0.55 mm above the floor plane. The pair weighs 2.55 g and the halo 0.77 g.
+Nothing has been printed yet.
+
+v1 prints support-free, upright, as installed. `../cad/overhang.py` reports
+only bridges (window top 13.4 mm, slot roof 2.1 mm) and overhangs under 1 mm
+(deck lip 0.67, bayonet channel roof 0.95). v0 was rejected on the bench
+because its joint pegs, shoulder pads and accessory lugs floated above the bed.
+The changes that differ from the design above:
+
+- **Parting plane on x = 0, between the tabs.** Each half carries one whole
+  tab window and closes along X.
+- **Joint:** a vertical tongue standing on the bed (+Y end) slides into a
+  bottom-open slot (-Y end), with a vertical detent rib. There is no blade
+  latch yet.
+- **No support pads.** They floated 2.8 mm above the bed. The deck lip over
+  the cap rim and the bead in the flange groove carry the vertical load.
+- **Bead flush with the bed.** The wall now starts at the bead's lower face
+  (z −0.45).
+- **Bayonet:** a 2.4 mm ring (a 1.6 mm ring leaves no roof over a lug channel),
+  45° travel and channels open down to the deck, so accessory lugs share the
+  accessory's bed face. The detent is a radial bump at the channel root.
+- **Edges are not yet radiused.** Every edge needs ≥ 1 mm before any hen
+  wears it.

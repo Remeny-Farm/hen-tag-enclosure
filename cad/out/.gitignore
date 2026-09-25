@@ -42,3 +42,6 @@ a_*.stl
 b_*.stl
 motifs.svg
 proof_*.svg
+
+# Assembly placements from ../collar_full.py: for renders and fit checks only.
+asm_*.stl
