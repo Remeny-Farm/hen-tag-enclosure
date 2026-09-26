@@ -1,3 +1,7 @@
+> **Moved (2026-09-26).** This repository is archived. The enclosure now lives, with its full history, in the Open Source Farming catalogue:
+> https://github.com/Remeny-Farm/open-source-farming-catalog/tree/main/projects/holyiot-25008-enclosure
+> Contributions, issues and build reports go there. The site entry is https://opensource.mootopia.wtf/#holyiot-25008-enclosure (English) and https://opensource.remeny.farm/#holyiot-25008-enclosure (Hungarian).
+
 # Hen Tag Enclosure
 
 Parametric, 3D-printed enclosure for the Remeny Farm hen tag: a small
